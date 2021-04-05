@@ -19,7 +19,7 @@ namespace MailDispatcher.Controllers
             [FromServices] AccountRepository accountRepository,
             [FromHeader(Name = "x-id")] string id,
             [FromHeader(Name = "x-auth")] string auth,
-            [FromBody] MessageBody model
+            [FromBody] Job model
             )
         {
             var a = await accountRepository.GetAsync(id);

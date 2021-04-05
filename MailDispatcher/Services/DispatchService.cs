@@ -4,11 +4,11 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ubiety.Dns.Core;
 
 namespace MailDispatcher.Services
 {
@@ -16,11 +16,13 @@ namespace MailDispatcher.Services
     {
         private readonly JobStorage jobs;
         private readonly TelemetryClient telemetry;
+        private readonly JobResponseRepository responseRepository;
 
-        public DispatchService(JobStorage jobs,TelemetryClient telemetry)
+        public DispatchService(JobStorage jobs,TelemetryClient telemetry, JobResponseRepository responseRepository)
         {
             this.jobs = jobs;
             this.telemetry = telemetry;
+            this.responseRepository = responseRepository;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,7 +48,7 @@ namespace MailDispatcher.Services
 
         Resolver dns = new Resolver();
 
-        private async Task SendEmailAsync(MessageBody message, CancellationToken token)
+        private async Task SendEmailAsync(Job message, CancellationToken token)
         {
             byte[] data = null;
             using (var ms = new MemoryStream())
@@ -63,8 +65,26 @@ namespace MailDispatcher.Services
                 .ToList();
 
 
-            await Task.WhenAll(rlist.Select(x => SendEmailAsync(x, rlist, token) ));
+            var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.ToList(), token) ));
+
+            if (r.Any(x => !x))
+                return;
+
+            await jobs.RemoveAsync(message);
             
+        }
+
+        private async Task<bool> SendEmailAsync(
+            Job message, 
+            string domain, 
+            List<(string account, string domain, string address)> list, 
+            CancellationToken token)
+        {
+            var response = await responseRepository.GetAsync(message.RowKey + "/" + domain);
+            if (response.Sent != null)
+                return true;
+
+            return false;
         }
     }
 }

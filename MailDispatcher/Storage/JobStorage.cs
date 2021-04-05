@@ -22,7 +22,7 @@ namespace MailDispatcher.Storage
     }
 
 
-    public class MessageBody: TableEntity
+    public class Job: TableEntity
     {
         public string From { get; set; }
         public string Recipients { get; set; }
@@ -35,12 +35,36 @@ namespace MailDispatcher.Storage
         [IgnoreProperty]
         public Account Account { get; set; }
 
+        [IgnoreProperty]
+        public string PopReceipt { get; set; }
+        
+
     }
     
     [DIRegister(ServiceLifetime.Singleton)]
-    public class JobRepository: TableRepository<MessageBody>
+    public class JobRepository: TableRepository<Job>
     {
         public JobRepository(AzureStorage storage): base(storage)
+        {
+
+        }
+    }
+
+    public class JobResponse: TableEntity
+    {
+
+        public DateTime? Sent { get; set; }
+
+        [IgnoreProperty]
+        public bool Success => string.IsNullOrEmpty(Error) && Sent != null;
+
+        public string Error { get; set; }
+    }
+
+    [DIRegister(ServiceLifetime.Singleton)]
+    public class JobResponseRepository: TableRepository<JobResponse>
+    {
+        public JobResponseRepository(AzureStorage storage): base(storage)
         {
 
         }
@@ -84,7 +108,7 @@ namespace MailDispatcher.Storage
             var blob = blobs.GetBlobClient(id);
             await blob.UploadAsync(file.OpenReadStream());
 
-            var body = new MessageBody() {
+            var body = new Job() {
                 PartitionKey = accountId,
                 RowKey = id.ToString(),
                 From = message.From,
@@ -94,20 +118,26 @@ namespace MailDispatcher.Storage
 
             await repository.SaveAsync(body);
 
-
+            await queue.SendMessageAsync(id);
 
             return id;
 
         }
 
+        public async Task RemoveAsync(Job job)
+        {
+            await queue.DeleteMessageAsync(job.RowKey, job.PopReceipt);
+        }
 
-        public async Task<MessageBody[]> DequeueAsync(CancellationToken stoppingToken)
+
+        public async Task<Job[]> DequeueAsync(CancellationToken stoppingToken)
         {
             var items = await queue.ReceiveMessagesAsync(16, TimeSpan.FromSeconds(30), stoppingToken);
             var tasks = items.Value.Select(async x => {
                 var msg = await repository.GetAsync(x.MessageId);
                 msg.Message = blobs.GetBlobClient(x.MessageId);
                 msg.Account = await accountRepository.GetAsync(msg.PartitionKey);
+                msg.PopReceipt = x.PopReceipt;
                 return msg;
             });
             return await Task.WhenAll(tasks);
