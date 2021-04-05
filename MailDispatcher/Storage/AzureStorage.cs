@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,8 @@ namespace MailDispatcher.Storage
     {
         public readonly CloudTableClient CloudTableClient;
         public readonly BlobServiceClient BlobServiceClient;
+        public readonly QueueServiceClient QueueClientService;
+        private readonly CloudTable Identity;
 
         public AzureStorage(IConfiguration configuration)
         {
@@ -21,6 +24,8 @@ namespace MailDispatcher.Storage
             var account = CloudStorageAccount.Parse(cnstr);
             this.CloudTableClient = account.CreateCloudTableClient();
             this.BlobServiceClient = new BlobServiceClient(cnstr);
+            this.QueueClientService = new QueueServiceClient(cnstr);
         }
+
     }
 }
