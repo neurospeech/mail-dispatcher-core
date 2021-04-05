@@ -1,4 +1,5 @@
 ﻿using MailDispatcher.Core.Auth;
+using MailDispatcher.Services;
 using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -28,6 +29,7 @@ namespace MailDispatcher.Controllers
         [HttpPut("login")]
         public async Task<object> Login(
             [FromServices] AccountRepository accountRepository,
+            [FromServices] HashService hashService,
             [FromBody] LoginModel model
             )
         {
@@ -36,11 +38,11 @@ namespace MailDispatcher.Controllers
             {
                 user = await accountRepository.SaveAsync(new Account { 
                     ID = "admin",
-                    Password = "mail-dispatcher"
+                    Password = hashService.Hash("admin", "mail-dispatcher")
                 });
             }
 
-            if (user.Password != model.Password)
+            if (user.Password != hashService.Hash(user.ID, model.Password))
                 return Unauthorized();
 
             var claimsIdentity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
