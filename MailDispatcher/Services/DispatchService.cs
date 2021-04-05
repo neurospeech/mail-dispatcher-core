@@ -87,16 +87,33 @@ namespace MailDispatcher.Services
             List<string> addresses, 
             CancellationToken token)
         {
+            if(message.Locked != null)
+            {
+                if (message.Locked > DateTime.UtcNow)
+                    return false;
+            }
             var response = await responseRepository.GetAsync(message.RowKey + "/" + domain);
+            if (message.Tries> 3)
+            {
+                response.AppendError("Failed after 3 retries");
+                response.Sent = DateTime.Now;
+                return true;
+            }
             if (response.Sent != null)
                 return true;
             var (sent, error) = await smtpService.SendAsync(domain, message, addresses, token);
+            var now = DateTime.UtcNow;
             if(error == null)
             {
-                response.Sent = DateTime.UtcNow;
+                response.Sent = now;
             } else
             {
-                response.Error = error;
+                message.Locked = now.AddMinutes( (message.Tries + 1) * 15);
+                response.AppendError(error);
+            }
+            if(!sent)
+            {
+                message.Tries++;
             }
             await responseRepository.SaveAsync(response);
             return sent;

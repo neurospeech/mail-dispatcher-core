@@ -29,6 +29,10 @@ namespace MailDispatcher.Storage
 
         public string Url { get; set; }
 
+        public DateTime? Locked { get; set; }
+
+        public int Tries { get; set; }
+
         [IgnoreProperty]
         public BlobClient Message { get; set; }
 
@@ -60,6 +64,16 @@ namespace MailDispatcher.Storage
         public bool Success => string.IsNullOrEmpty(Error) && Sent != null;
 
         public string Error { get; set; }
+
+        internal void AppendError(string v)
+        {
+            if (Error == null)
+            {
+                Error = v;
+                return;
+            }
+            Error += "\r\n" + v;
+        }
     }
 
     [DIRegister(ServiceLifetime.Singleton)]
