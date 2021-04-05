@@ -37,8 +37,9 @@ namespace MailDispatcher.Storage
 
         [IgnoreProperty]
         public string PopReceipt { get; set; }
-        
 
+        [IgnoreProperty]
+        public byte[] Data { get; internal set; }
     }
     
     [DIRegister(ServiceLifetime.Singleton)]

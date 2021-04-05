@@ -59,6 +59,7 @@ namespace MailDispatcher.Services
             {
                 await message.Message.DownloadToAsync(ms, token);
                 data = ms.ToArray();
+                message.Data = data;
             }
 
             var rlist = JsonConvert.DeserializeObject<string[]>(message.Recipients)
@@ -69,7 +70,7 @@ namespace MailDispatcher.Services
                 .ToList();
 
 
-            var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.Select(x => x.address).ToList(), data, token) ));
+            var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.Select(x => x.address).ToList(), token) ));
 
             if (r.Any(x => !x))
                 return;
@@ -84,13 +85,12 @@ namespace MailDispatcher.Services
             Job message, 
             string domain, 
             List<string> addresses, 
-            byte[] data,
             CancellationToken token)
         {
             var response = await responseRepository.GetAsync(message.RowKey + "/" + domain);
             if (response.Sent != null)
                 return true;
-            var (sent, error) = await smtpService.SendAsync(message, addresses);
+            var (sent, error) = await smtpService.SendAsync(domain, message, addresses, token);
             if(error == null)
             {
                 response.Sent = DateTime.UtcNow;
@@ -98,6 +98,7 @@ namespace MailDispatcher.Services
             {
                 response.Error = error;
             }
+            await responseRepository.SaveAsync(response);
             return sent;
         }
     }
