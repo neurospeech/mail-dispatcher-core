@@ -29,6 +29,8 @@ namespace MailDispatcher.Controllers
             public string ID { get; set; }
 
             public  string DomainName { get; set; }
+
+            public string Selector { get; set; }
         }
 
         [HttpPut()]
@@ -42,6 +44,7 @@ namespace MailDispatcher.Controllers
 
             return await repository.SaveAsync(new Account { 
                 ID = model.ID,
+                Selector = model.Selector,
                 DomainName = model.DomainName,
                 PublicKey = Convert.ToBase64String( rsa.ExportRSAPublicKey()),
                 PrivateKey = Convert.ToBase64String( rsa.ExportRSAPrivateKey()),
