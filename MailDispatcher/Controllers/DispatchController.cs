@@ -17,17 +17,24 @@ namespace MailDispatcher.Controllers
         [HttpPut]
         public async Task<IActionResult> Put(
             [FromServices] AccountRepository accountRepository,
+            [FromServices] JobStorage jobs,
             [FromHeader(Name = "x-id")] string id,
             [FromHeader(Name = "x-auth")] string auth,
-            [FromBody] Job model
+            [FromBody] MessageRequest model
             )
         {
             var a = await accountRepository.GetAsync(id);
             if (a.AuthKey != auth)
                 return Unauthorized();
 
-            Request.Form.Files.FirstOrDefault();
+            var file = Request.Form.Files.FirstOrDefault();
+            if (file == null)
+                return BadRequest();
 
+            var r = await jobs.Queue(id, model, file);
+            return Ok(new { 
+                id = r
+            });
         }
 
     }
