@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MimeKit.Cryptography;
 using System;
 using System.IO;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Storage
@@ -26,10 +27,12 @@ namespace MailDispatcher.Storage
 
         public string PublicKey { get; set; }
 
+        [JsonIgnore]
         public string Password { get; set; }
 
         private DkimSigner signer;
         [IgnoreProperty]
+        [JsonIgnore]
         public DkimSigner DkimSigner
         {
             get
