@@ -1,5 +1,5 @@
-﻿using Heijden.DNS;
-using MailDispatcher.Storage;
+﻿using MailDispatcher.Storage;
+using MailKit.Net.Smtp;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -17,12 +17,18 @@ namespace MailDispatcher.Services
         private readonly JobStorage jobs;
         private readonly TelemetryClient telemetry;
         private readonly JobResponseRepository responseRepository;
+        private readonly SmtpService smtpService;
 
-        public DispatchService(JobStorage jobs,TelemetryClient telemetry, JobResponseRepository responseRepository)
+        public DispatchService(
+            JobStorage jobs,
+            TelemetryClient telemetry, 
+            JobResponseRepository responseRepository,
+            SmtpService smtpService)
         {
             this.jobs = jobs;
             this.telemetry = telemetry;
             this.responseRepository = responseRepository;
+            this.smtpService = smtpService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,8 +52,6 @@ namespace MailDispatcher.Services
             await Task.WhenAll(jobs.Select(x => SendEmailAsync(x, stoppingToken)));
         }
 
-        Resolver dns = new Resolver();
-
         private async Task SendEmailAsync(Job message, CancellationToken token)
         {
             byte[] data = null;
@@ -60,12 +64,12 @@ namespace MailDispatcher.Services
             var rlist = JsonConvert.DeserializeObject<string[]>(message.Recipients)
                 .Select(x => (tokens: x.ToLower().Split('@'),address: x))
                 .Where(x => x.tokens.Length > 1)
-                .Select(x => ( account: x.tokens.First(), domain: x.tokens.Last(), address: x.address ))
+                .Select(x => ( domain: x.tokens.Last(), address: x.address ))
                 .GroupBy(x => x.domain)
                 .ToList();
 
 
-            var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.ToList(), token) ));
+            var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.Select(x => x.address).ToList(), data, token) ));
 
             if (r.Any(x => !x))
                 return;
@@ -74,17 +78,27 @@ namespace MailDispatcher.Services
             
         }
 
+
+
         private async Task<bool> SendEmailAsync(
             Job message, 
             string domain, 
-            List<(string account, string domain, string address)> list, 
+            List<string> addresses, 
+            byte[] data,
             CancellationToken token)
         {
             var response = await responseRepository.GetAsync(message.RowKey + "/" + domain);
             if (response.Sent != null)
                 return true;
-
-            return false;
+            var (sent, error) = await smtpService.SendAsync(message, addresses);
+            if(error == null)
+            {
+                response.Sent = DateTime.UtcNow;
+            } else
+            {
+                response.Error = error;
+            }
+            return sent;
         }
     }
 }
