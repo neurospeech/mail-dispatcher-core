@@ -1,0 +1,34 @@
+{
+  "name": "@neurospeech/mail-dispatcher-admin",
+  "version": "1.0.1",
+  "description": "Mail Dispatcher Admin",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./node_modules/@web-atoms/unit-test/index.js ./dist/tests",
+    "postversion": "git push --follow-tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neurospeech/mail-dispatcher-core.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/neurospeech/mail-dispatcher-core.git"
+  },
+  "homepage": "https://github.com/neurospeech/mail-dispatcher-core#readme",
+  "dependencies": {
+    "@web-atoms/core": "^2.0.3",
+    "@web-atoms/font-awesome": "^1.0.22",
+    "@web-atoms/module-loader": "2.0.8",
+    "@web-atoms/web-controls": "^2.0.4",
+    "reflect-metadata": "^0.1.13"
+  },
+  "bundledDependencies": [
+    "@web-atoms/core",
+    "@web-atoms/web-controls",
+    "@web-atoms/xf-controls",
+    "reflect-metadata"
+  ],
+  "devDependencies": {}
+}

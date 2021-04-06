@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module":"umd",
+        "sourceMap": true,
+        "declaration": true,
+        "moduleResolution": "node",
+        "outDir": "dist",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "jsx": "react",
+        "jsxFactory": "XNode.create",
+        "baseUrl": ".",
+        "paths": {
+            "@web-atoms/samples/src/*": [ "./src/*" ]
+        },
+        "lib": [
+            "es6",
+            "dom"
+        ]
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+		"node_modules",
+        "tests",
+        "src/commands/new-app/templates/basic/index.d.ts",
+        "src/commands/new-app/templates/list/index.d.ts",
+        "src/commands/new-app/templates/flyout/index.d.ts"
+    ]
+}

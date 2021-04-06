@@ -34,12 +34,16 @@ namespace MailDispatcher.Controllers
             )
         {
             var user = await accountRepository.GetAsync(model.Username);
-            if (user == null && model.Username == "admin")
+            if (user == null)
             {
-                user = await accountRepository.SaveAsync(new Account { 
-                    ID = "admin",
-                    Password = hashService.Hash("admin", "mail-dispatcher")
-                });
+                if (model.Username == "admin")
+                {
+                    user = await accountRepository.SaveAsync(new Account
+                    {
+                        ID = "admin",
+                        Password = hashService.Hash("admin", "mail-dispatcher")
+                    });
+                }
             }
 
             if (user.Password != hashService.Hash(user.ID, model.Password))
