@@ -82,6 +82,18 @@ namespace MailDispatcher.Storage
             return first;
         }
 
+        public virtual async Task<List<T>> QueryAllAsync(
+            Func<TableQuery<T>, IQueryable<T>> query = null, 
+            CancellationToken token = default)
+        {
+            var list = new List<T>();
+            await foreach(var batch in QueryAsync(query, token))
+            {
+                list.AddRange(batch);
+            }
+            return list;
+        }
+
         public virtual async IAsyncEnumerable<TableQuerySegment<T>> QueryAsync(
             Func<TableQuery<T>, IQueryable<T>> query = null,
             [EnumeratorCancellation] CancellationToken token = default)

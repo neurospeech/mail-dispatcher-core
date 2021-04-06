@@ -73,8 +73,7 @@ namespace MailDispatcher.Services
 
             var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.Select(x => x.address).ToList(), token) ));
 
-            if (r.Any(x => !x))
-                return;
+
 
             await jobs.RemoveAsync(message);
             
@@ -82,7 +81,7 @@ namespace MailDispatcher.Services
 
 
 
-        private async Task<bool> SendEmailAsync(
+        private async Task<(bool done, string error)> SendEmailAsync(
             Job message, 
             string domain, 
             List<string> addresses, 
@@ -91,34 +90,23 @@ namespace MailDispatcher.Services
             if(message.Locked != null)
             {
                 if (message.Locked > DateTime.UtcNow)
-                    return false;
+                    return (false, null);
             }
-            var response = await responseRepository.GetAsync(message.RowKey + "-" + domain, true);
             if (message.Tries> 3)
             {
-                response.AppendError("Failed after 3 retries");
-                response.Sent = DateTime.Now;
-                await responseRepository.SaveAsync(response);
-                return true;
+                return (true, "Failed after 3 retries");
             }
-            if (response.Sent != null)
-                return true;
             var (sent, error) = await smtpService.SendAsync(domain, message, addresses, token);
             var now = DateTime.UtcNow;
-            if(error == null)
-            {
-                response.Sent = now;
-            } else
+            if(error != null)
             {
                 message.Locked = now.AddMinutes( (message.Tries + 1) * 15);
-                response.AppendError(error);
             }
             if(!sent)
             {
                 message.Tries++;
-            }
-            await responseRepository.SaveAsync(response);
-            return sent;
+            } 
+            return (sent, error);
         }
     }
 }

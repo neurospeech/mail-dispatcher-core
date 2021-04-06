@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +41,17 @@ namespace MailDispatcher.Storage
         public string Content { get; set; }
     }
 
+    public class JobResponse
+    {
+        public string Domain { get; set; }
 
+        public string Error { get; set; }
+
+        public DateTime? Sent { get; set; }
+
+        [IgnoreProperty]
+        public bool Success => Sent != null && string.IsNullOrEmpty(Error);
+    }
     public class Job: TableEntity
     {
         public string AccountID { get; set; }
@@ -53,6 +64,15 @@ namespace MailDispatcher.Storage
         public DateTime? Locked { get; set; }
 
         public int Tries { get; set; }
+
+        public string ResponsesJson
+        {
+            get => Responses == null ? null : JsonSerializer.Serialize(Responses);
+            set => Responses = value == null ? null : JsonSerializer.Deserialize<JobResponse[]>(value);
+        }
+
+        [IgnoreProperty]
+        public JobResponse[] Responses { get; set; }
 
         [IgnoreProperty]
         public BlobClient Message { get; set; }
@@ -77,37 +97,6 @@ namespace MailDispatcher.Storage
         }
     }
 
-    public class JobResponse: TableEntity
-    {
-
-        public DateTime? Sent { get; set; }
-
-        [IgnoreProperty]
-        public bool Success => string.IsNullOrEmpty(Error) && Sent != null;
-
-        public string Error { get; set; }
-
-        internal void AppendError(string v)
-        {
-            if (Error == null)
-            {
-                Error = v;
-                return;
-            }
-            Error += "\r\n" + v;
-        }
-    }
-
-    [DIRegister(ServiceLifetime.Singleton)]
-    public class JobResponseRepository: TableRepository<JobResponse>
-    {
-        public JobResponseRepository(AzureStorage storage): base(storage)
-        {
-
-        }
-    }
-
-
     [DIRegister(ServiceLifetime.Singleton)]
     public class JobStorage
     {
@@ -115,6 +104,7 @@ namespace MailDispatcher.Storage
         private readonly AccountRepository accountRepository;
         private readonly JobRepository repository;
         private readonly BlobContainerClient blobs;
+        private readonly BlobContainerClient reports;
         private readonly QueueClient queue;
 
         public JobStorage(
@@ -126,7 +116,6 @@ namespace MailDispatcher.Storage
             this.Identity.CreateIfNotExists();
             this.accountRepository = accountRepository;
             this.repository = repository;
-
             this.blobs = storage.BlobServiceClient.GetBlobContainerClient("mails");
             this.blobs.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
 
@@ -141,7 +130,7 @@ namespace MailDispatcher.Storage
         {
 
             var nid = await Identity.GenerateSequenceAsync();
-            var id = $"{Guid.NewGuid().ToHexString()}-{nid}.eml";
+            var id = $"{Guid.NewGuid().ToHexString()}-{nid}";
             var blob = blobs.GetBlobClient(id);
             if (file != null)
             {
