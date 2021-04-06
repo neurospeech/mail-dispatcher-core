@@ -3,18 +3,35 @@ using Azure.Storage.Queues;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
+using MimeKit;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Storage
 {
 
-    public class MessageRequest
+    public class SimpleMail
+    {
+        public string From { get; set; }
+        public string[] To { get; set; }
+
+        public string[] Cc { get; set; }
+
+        public string[] Bcc { get; set; }
+
+        public string Subject { get; set; }
+
+        public string TextBody { get; set; }
+
+        public string HtmlBody { get; set; }
+    }
+
+    public class RawMessageRequest
     {
         public string From { get; set; }
 
@@ -119,8 +136,8 @@ namespace MailDispatcher.Storage
 
         public async Task<string> Queue(
             string accountId,
-            MessageRequest message,
-            IFormFile file)
+            RawMessageRequest message,
+            Stream file)
         {
 
             var nid = await Identity.GenerateSequenceAsync();
@@ -128,17 +145,14 @@ namespace MailDispatcher.Storage
             var blob = blobs.GetBlobClient(id);
             if (file != null)
             {
-                await blob.UploadAsync(file.OpenReadStream());
-            } else
-            {
-                await blob.UploadAsync(new MemoryStream( System.Text.Encoding.UTF8.GetBytes( message.Content) ));
+                await blob.UploadAsync(file);
             }
 
             var body = new Job() {
                 AccountID = accountId,
-                RowKey = id.ToString(),
                 From = message.From,
-                Recipients = JsonConvert.SerializeObject(message.Recipients),
+                Recipients = JsonSerializer.Serialize(message.Recipients),
+                RowKey = id.ToString(),
                 Url = blob.Uri.ToString()
             };
 
