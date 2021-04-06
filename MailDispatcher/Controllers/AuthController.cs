@@ -26,6 +26,14 @@ namespace MailDispatcher.Controllers
 
         }
 
+        [HttpGet]
+        public object Get()
+        {
+            if (!User.Identity.IsAuthenticated)
+                return Unauthorized();
+            return new { ID = User.Identity.Name };
+        }
+
         [HttpPut("login")]
         public async Task<object> Login(
             [FromServices] AccountRepository accountRepository,
@@ -60,7 +68,7 @@ namespace MailDispatcher.Controllers
                 }
                 );
 
-            return "ok";
+            return new { ID = model.Username };
         }
 
     }

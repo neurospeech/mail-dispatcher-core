@@ -3,12 +3,12 @@ import { AtomBinder } from "@web-atoms/core/dist/core/AtomBinder";
 import { AtomList } from "@web-atoms/core/dist/core/AtomList";
 import { BindableProperty } from "@web-atoms/core/dist/core/BindableProperty";
 import { INameValuePairs } from "@web-atoms/core/dist/core/types";
+import DISingleton from "@web-atoms/core/dist/di/DISingleton";
 import { Inject } from "@web-atoms/core/dist/di/Inject";
-import { RegisterSingleton } from "@web-atoms/core/dist/di/RegisterSingleton";
 import { IPageOptions, NavigationService } from "@web-atoms/core/dist/services/NavigationService";
 import MenuItem from "../models/MenuItem";
 
-@RegisterSingleton
+@DISingleton()
 export default class MenuService {
 
     @BindableProperty

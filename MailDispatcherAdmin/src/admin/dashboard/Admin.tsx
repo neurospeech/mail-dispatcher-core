@@ -1,4 +1,4 @@
-import TabHost from "../core/TabHost";
+import TabHost from "../../core/TabHost";
 import AdminViewModel from "./AdminViewModel";
 export default class Admin extends TabHost {
 

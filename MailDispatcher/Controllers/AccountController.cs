@@ -11,8 +11,33 @@ namespace MailDispatcher.Controllers
     public class AccountController: Controller
     {
 
+        public class AccountInfo
+        {
+
+            public AccountInfo()
+            {
+
+            }
+
+            public AccountInfo(Account account)
+            {
+                ID = account.ID;
+                AuthKey = account.AuthKey;
+                DomainName = account.DomainName;
+                Selector = account.Selector;
+                PublicKey = account.PublicKey;
+
+            }
+
+            public string ID { get; internal set; }
+            public string AuthKey { get; internal set; }
+            public string DomainName { get; internal set; }
+            public string Selector { get; internal set; }
+            public string PublicKey { get; internal set; }
+        }
+
         [HttpGet()]
-        public async Task<List<Account>> Get(
+        public async Task<IEnumerable<AccountInfo>> Get(
             [FromServices] AccountRepository repository
             )
         {
@@ -21,7 +46,7 @@ namespace MailDispatcher.Controllers
             {
                 list.AddRange(item);
             }
-            return list;
+            return list.Select(y => new AccountInfo(y));
         }
 
         public class PutBody
@@ -33,8 +58,20 @@ namespace MailDispatcher.Controllers
             public string Selector { get; set; }
         }
 
+        [HttpPost]
+        public async Task<AccountInfo> Post(
+            [FromServices] AccountRepository repository,
+            [FromBody] PutBody model)
+        {
+            var a = await repository.GetAsync(model.ID);
+            a.AuthKey = Guid.NewGuid().ToString();
+            a = await repository.SaveAsync(a);
+            return new AccountInfo(a);
+        }
+        
+
         [HttpPut()]
-        public async Task<Account> Put(
+        public async Task<AccountInfo> Put(
             [FromServices] AccountRepository repository,
             [FromBody] PutBody model
         )
@@ -42,7 +79,7 @@ namespace MailDispatcher.Controllers
 
             var rsa = System.Security.Cryptography.RSA.Create();
 
-            return await repository.SaveAsync(new Account { 
+            var r = await repository.SaveAsync(new Account { 
                 ID = model.ID,
                 Selector = model.Selector,
                 DomainName = model.DomainName,
@@ -50,6 +87,8 @@ namespace MailDispatcher.Controllers
                 PrivateKey = Convert.ToBase64String( rsa.ExportRSAPrivateKey()),
                 AuthKey = Guid.NewGuid().ToString()
             });
+
+            return new AccountInfo(r);
         }
 
     }
