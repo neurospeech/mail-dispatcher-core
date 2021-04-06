@@ -166,6 +166,7 @@ namespace MailDispatcher.Storage
 
         public async Task RemoveAsync(Job job)
         {
+            await job.Message.DeleteIfExistsAsync();
             await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
         }
 

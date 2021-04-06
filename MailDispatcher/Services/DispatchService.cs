@@ -98,6 +98,7 @@ namespace MailDispatcher.Services
             {
                 response.AppendError("Failed after 3 retries");
                 response.Sent = DateTime.Now;
+                await responseRepository.SaveAsync(response);
                 return true;
             }
             if (response.Sent != null)
