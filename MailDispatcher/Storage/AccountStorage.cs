@@ -39,7 +39,7 @@ namespace MailDispatcher.Storage
             {
                 if (signer != null)
                     return signer;
-                var ms = new MemoryStream(Convert.FromBase64String(PrivateKey));
+                var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(PrivateKey));
                 signer = new DkimSigner(ms, DomainName, Selector);
                 return signer;
             }

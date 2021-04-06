@@ -48,6 +48,7 @@ namespace MailDispatcher.Storage
 
         [IgnoreProperty]
         public byte[] Data { get; internal set; }
+        public string QueueID { get; set; }
     }
     
     [DIRegister(ServiceLifetime.Singleton)]
@@ -141,23 +142,23 @@ namespace MailDispatcher.Storage
                 Url = blob.Uri.ToString()
             };
 
+
+            var qid = await queue.SendMessageAsync(id, TimeSpan.FromMilliseconds(500));
+            body.QueueID = qid.Value.MessageId;
             await repository.SaveAsync(body);
-
-            await queue.SendMessageAsync(id);
-
             return id;
 
         }
 
         public async Task RemoveAsync(Job job)
         {
-            await queue.DeleteMessageAsync(job.RowKey, job.PopReceipt);
+            await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
         }
 
 
         public async Task<Job[]> DequeueAsync(CancellationToken stoppingToken)
         {
-            var items = await queue.ReceiveMessagesAsync(16, TimeSpan.FromSeconds(30), stoppingToken);
+            var items = await queue.ReceiveMessagesAsync(16, TimeSpan.FromMinutes(5), stoppingToken);
             var tasks = items.Value.Select(async x => {
                 var jobID = x.Body.ToString();
                 var msg = await repository.GetAsync(jobID);

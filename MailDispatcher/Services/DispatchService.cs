@@ -93,7 +93,7 @@ namespace MailDispatcher.Services
                 if (message.Locked > DateTime.UtcNow)
                     return false;
             }
-            var response = await responseRepository.GetAsync(message.RowKey + "/" + domain, true);
+            var response = await responseRepository.GetAsync(message.RowKey + "-" + domain, true);
             if (message.Tries> 3)
             {
                 response.AppendError("Failed after 3 retries");

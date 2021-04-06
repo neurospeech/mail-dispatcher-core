@@ -84,7 +84,7 @@ namespace MailDispatcher.Controllers
                 Selector = model.Selector,
                 DomainName = model.DomainName,
                 PublicKey = Convert.ToBase64String( rsa.ExportRSAPublicKey()),
-                PrivateKey = Convert.ToBase64String( rsa.ExportPkcs8PrivateKey()),
+                PrivateKey = rsa.ExportPem(),
                 AuthKey = Guid.NewGuid().ToHexString()
             });
 
