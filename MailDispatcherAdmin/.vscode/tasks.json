@@ -26,7 +26,7 @@
             "command": "node",
             "args": [
                 "${env:APPDATA}/npm/node_modules/@web-atoms/dev-server/index.js",
-                "https://test.webatoms.in"
+                "https://mails.neurospeech.com"
                 // "http://localhost:62890/"
             ],
             "problemMatcher": []
