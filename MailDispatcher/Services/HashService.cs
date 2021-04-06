@@ -22,7 +22,7 @@ namespace MailDispatcher.Services
             var key = $"{userName}-{password}";
             var bytes = System.Text.Encoding.UTF8.GetBytes(key);
             var h = hash.ComputeHash(bytes);
-            return string.Join("", h.Select(x => x.ToString("x2")));
+            return h.ToHexString();
         }
 
     }

@@ -58,6 +58,7 @@ namespace MailDispatcher.Services
             using (var ms = new MemoryStream())
             {
                 await message.Message.DownloadToAsync(ms, token);
+                ms.Position = 0;
                 data = ms.ToArray();
                 message.Data = data;
             }
@@ -92,7 +93,7 @@ namespace MailDispatcher.Services
                 if (message.Locked > DateTime.UtcNow)
                     return false;
             }
-            var response = await responseRepository.GetAsync(message.RowKey + "/" + domain);
+            var response = await responseRepository.GetAsync(message.RowKey + "/" + domain, true);
             if (message.Tries> 3)
             {
                 response.AppendError("Failed after 3 retries");

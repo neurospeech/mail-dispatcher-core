@@ -1,5 +1,6 @@
 ﻿using MailDispatcher.Storage;
 using MailKit.Net.Smtp;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using MimeKit;
 using MimeKit.Cryptography;
@@ -16,10 +17,12 @@ namespace MailDispatcher.Services
     public class SmtpService
     {
         private readonly DnsLookupService lookupService;
+        private readonly TelemetryClient telemetryClient;
 
-        public SmtpService(DnsLookupService lookupService)
+        public SmtpService(DnsLookupService lookupService, TelemetryClient telemetryClient)
         {
             this.lookupService = lookupService;
+            this.telemetryClient = telemetryClient;
         }
 
         internal async Task<(bool sent, string error)> SendAsync(string domain, Job message, List<string> addresses, CancellationToken token)
@@ -49,30 +52,31 @@ namespace MailDispatcher.Services
         internal async Task<(SmtpClient smtpClient, string error)> NewClient(string domain)
         {
             var client = new SmtpClient();
-
+            client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             var mxes = await lookupService.LookupAsync(domain);
 
             foreach (var mx in mxes)
             {
                 try
                 {
-                    await client.ConnectAsync(mx, 587, true);
+                    await client.ConnectAsync(mx, 25);
                     return (client, null);
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    telemetryClient.TrackException(ex);
                 }
 
                 try
                 {
-                    await client.ConnectAsync(mx, 25);
+                    await client.ConnectAsync(mx, 587, true);
                     return (client, null);
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    telemetryClient.TrackException(ex);
                 }
+
             }
 
             return (null, $"Could not connect to any MX host on {domain}");

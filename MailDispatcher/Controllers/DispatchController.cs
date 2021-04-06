@@ -27,9 +27,13 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != auth)
                 return Unauthorized();
 
-            var file = Request.Form.Files.FirstOrDefault();
-            if (file == null)
-                return BadRequest();
+            Microsoft.AspNetCore.Http.IFormFile file = null;
+            if (model.Content == null)
+            {
+                file = Request.Form.Files.FirstOrDefault();
+                if (file == null)
+                    return BadRequest();
+            }
 
             var r = await jobs.Queue(id, model, file);
             return Ok(new { 

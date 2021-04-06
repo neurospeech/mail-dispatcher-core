@@ -19,11 +19,15 @@ namespace MailDispatcher.Storage
         public string From { get; set; }
 
         public string[] Recipients { get; set; }
+
+        public string Content { get; set; }
     }
 
 
     public class Job: TableEntity
     {
+        public string AccountID { get; set; }
+
         public string From { get; set; }
         public string Recipients { get; set; }
 
@@ -119,12 +123,18 @@ namespace MailDispatcher.Storage
         {
 
             var nid = await Identity.GenerateSequenceAsync();
-            var id = $"{Guid.NewGuid()}/{nid}.eml";
+            var id = $"{Guid.NewGuid().ToHexString()}-{nid}.eml";
             var blob = blobs.GetBlobClient(id);
-            await blob.UploadAsync(file.OpenReadStream());
+            if (file != null)
+            {
+                await blob.UploadAsync(file.OpenReadStream());
+            } else
+            {
+                await blob.UploadAsync(new MemoryStream( System.Text.Encoding.UTF8.GetBytes( message.Content) ));
+            }
 
             var body = new Job() {
-                PartitionKey = accountId,
+                AccountID = accountId,
                 RowKey = id.ToString(),
                 From = message.From,
                 Recipients = JsonConvert.SerializeObject(message.Recipients),
@@ -149,9 +159,10 @@ namespace MailDispatcher.Storage
         {
             var items = await queue.ReceiveMessagesAsync(16, TimeSpan.FromSeconds(30), stoppingToken);
             var tasks = items.Value.Select(async x => {
-                var msg = await repository.GetAsync(x.MessageId);
-                msg.Message = blobs.GetBlobClient(x.MessageId);
-                msg.Account = await accountRepository.GetAsync(msg.PartitionKey);
+                var jobID = x.Body.ToString();
+                var msg = await repository.GetAsync(jobID);
+                msg.Message = blobs.GetBlobClient(jobID);
+                msg.Account = await accountRepository.GetAsync(msg.AccountID);
                 msg.PopReceipt = x.PopReceipt;
                 return msg;
             });

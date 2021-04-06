@@ -18,7 +18,7 @@ namespace MailDispatcher.Storage
 
         public Task DeleteAsync(T entity);
 
-        public Task<T> GetAsync(string rowKey);
+        public Task<T> GetAsync(string rowKey, bool create = false);
 
     }
 

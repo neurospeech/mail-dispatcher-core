@@ -27,12 +27,12 @@ namespace MailDispatcher.Storage
             return base.DeleteAsync(entity);
         }
 
-        public override Task<T> GetAsync(string rowKey)
+        public override Task<T> GetAsync(string rowKey, bool create = false)
         {
             return cache.GetOrCreateAsync(rowKey, (x) =>
             {
                 x.SlidingExpiration = TimeSpan.FromMinutes(5);
-                return base.GetAsync(rowKey);
+                return base.GetAsync(rowKey, create);
             });
         }
 
@@ -65,14 +65,21 @@ namespace MailDispatcher.Storage
             return table.ExecuteAsync(TableOperation.Delete(entity));
         }
 
-        public virtual async Task<T> GetAsync(string rowKey)
+        public virtual async Task<T> GetAsync(string rowKey, bool create = false)
         {
             var q = table.CreateQuery<T>()
                 .Where(x => x.PartitionKey == partitionKey && x.RowKey == rowKey)
                 as TableQuery<T>;
             
             var r = await table.ExecuteQuerySegmentedAsync(q, null);
-            return r.FirstOrDefault();
+            var first = r.FirstOrDefault();
+            if(first == null && create)
+            {
+                first = Activator.CreateInstance<T>();
+                first.PartitionKey = partitionKey;
+                first.RowKey = rowKey;
+            }
+            return first;
         }
 
         public virtual async IAsyncEnumerable<TableQuerySegment<T>> QueryAsync(
