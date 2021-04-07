@@ -67,7 +67,7 @@ namespace MailDispatcher.Services
             var rlist = JsonConvert.DeserializeObject<string[]>(message.Recipients)
                 .Select(x => (tokens: x.ToLower().Split('@'),address: x))
                 .Where(x => x.tokens.Length > 1)
-                .Select(x => ( domain: x.tokens.Last(), address: x.address ))
+                .Select(x => ( domain: x.tokens.Last(), x.address ))
                 .GroupBy(x => x.domain)
                 .ToList();
 

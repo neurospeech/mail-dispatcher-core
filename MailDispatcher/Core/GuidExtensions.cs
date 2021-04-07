@@ -11,11 +11,9 @@ namespace MailDispatcher
     {
         public static string ExportPem(this RSA rsa)
         {
-            using (var s = new StringWriter())
-            {
-                ExportPrivateKey(rsa, s);
-                return s.GetStringBuilder().ToString();
-            }
+            using var s = new StringWriter();
+            ExportPrivateKey(rsa, s);
+            return s.GetStringBuilder().ToString();
         }
 
         public static string ExportPemPublicKey(this RSA csp, bool wrapInComments = false)
@@ -82,36 +80,34 @@ namespace MailDispatcher
         {
             // if (csp.PublicOnly) throw new ArgumentException("CSP does not contain a private key", "csp");
             var parameters = csp.ExportParameters(true);
-            using (var stream = new MemoryStream())
+            using var stream = new MemoryStream();
+            var writer = new BinaryWriter(stream);
+            writer.Write((byte)0x30); // SEQUENCE
+            using (var innerStream = new MemoryStream())
             {
-                var writer = new BinaryWriter(stream);
-                writer.Write((byte)0x30); // SEQUENCE
-                using (var innerStream = new MemoryStream())
-                {
-                    var innerWriter = new BinaryWriter(innerStream);
-                    EncodeIntegerBigEndian(innerWriter, new byte[] { 0x00 }); // Version
-                    EncodeIntegerBigEndian(innerWriter, parameters.Modulus);
-                    EncodeIntegerBigEndian(innerWriter, parameters.Exponent);
-                    EncodeIntegerBigEndian(innerWriter, parameters.D);
-                    EncodeIntegerBigEndian(innerWriter, parameters.P);
-                    EncodeIntegerBigEndian(innerWriter, parameters.Q);
-                    EncodeIntegerBigEndian(innerWriter, parameters.DP);
-                    EncodeIntegerBigEndian(innerWriter, parameters.DQ);
-                    EncodeIntegerBigEndian(innerWriter, parameters.InverseQ);
-                    var length = (int)innerStream.Length;
-                    EncodeLength(writer, length);
-                    writer.Write(innerStream.GetBuffer(), 0, length);
-                }
-
-                var base64 = Convert.ToBase64String(stream.GetBuffer(), 0, (int)stream.Length).ToCharArray();
-                outputStream.WriteLine("-----BEGIN RSA PRIVATE KEY-----");
-                // Output as Base64 with lines chopped at 64 characters
-                for (var i = 0; i < base64.Length; i += 64)
-                {
-                    outputStream.WriteLine(base64, i, Math.Min(64, base64.Length - i));
-                }
-                outputStream.WriteLine("-----END RSA PRIVATE KEY-----");
+                var innerWriter = new BinaryWriter(innerStream);
+                EncodeIntegerBigEndian(innerWriter, new byte[] { 0x00 }); // Version
+                EncodeIntegerBigEndian(innerWriter, parameters.Modulus);
+                EncodeIntegerBigEndian(innerWriter, parameters.Exponent);
+                EncodeIntegerBigEndian(innerWriter, parameters.D);
+                EncodeIntegerBigEndian(innerWriter, parameters.P);
+                EncodeIntegerBigEndian(innerWriter, parameters.Q);
+                EncodeIntegerBigEndian(innerWriter, parameters.DP);
+                EncodeIntegerBigEndian(innerWriter, parameters.DQ);
+                EncodeIntegerBigEndian(innerWriter, parameters.InverseQ);
+                var length = (int)innerStream.Length;
+                EncodeLength(writer, length);
+                writer.Write(innerStream.GetBuffer(), 0, length);
             }
+
+            var base64 = Convert.ToBase64String(stream.GetBuffer(), 0, (int)stream.Length).ToCharArray();
+            outputStream.WriteLine("-----BEGIN RSA PRIVATE KEY-----");
+            // Output as Base64 with lines chopped at 64 characters
+            for (var i = 0; i < base64.Length; i += 64)
+            {
+                outputStream.WriteLine(base64, i, Math.Min(64, base64.Length - i));
+            }
+            outputStream.WriteLine("-----END RSA PRIVATE KEY-----");
         }
 
         private static void EncodeLength(BinaryWriter stream, int length)

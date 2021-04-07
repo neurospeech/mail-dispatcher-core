@@ -16,7 +16,6 @@ namespace MailDispatcher.Storage
         public readonly CloudTableClient CloudTableClient;
         public readonly BlobServiceClient BlobServiceClient;
         public readonly QueueServiceClient QueueClientService;
-        private readonly CloudTable Identity;
 
         public AzureStorage(IConfiguration configuration)
         {

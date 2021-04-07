@@ -23,7 +23,6 @@ namespace MailDispatcher.Storage
         private readonly AccountService accountRepository;
         private readonly JobRepository repository;
         private readonly BlobContainerClient blobs;
-        private readonly BlobContainerClient reports;
         private readonly QueueClient queue;
 
         public JobQueueService(

@@ -48,27 +48,9 @@ namespace MailDispatcher.Storage
                     (Bcc?.Length ?? 0));
             if (recipients.Capacity == 0)
                 throw new ValidationException("Need atleast one recipient");
-            foreach (var to in To)
-            {
-                msg.To.Add(MailboxAddress.Parse(to));
-                recipients.Add(to);
-            }
-            if (Cc != null)
-            {
-                foreach (var to in Cc)
-                {
-                    msg.Cc.Add(MailboxAddress.Parse(to));
-                    recipients.Add(to);
-                }
-            }
-            if (Bcc != null)
-            {
-                foreach (var to in Bcc)
-                {
-                    msg.Bcc.Add(MailboxAddress.Parse(to));
-                    recipients.Add(to);
-                }
-            }
+            AddRecipients(To, msg.To, recipients);
+            AddRecipients(Cc, msg.Cc, recipients);
+            AddRecipients(Bcc, null, recipients);
             msg.Subject = Subject;
 
             if(UnsubscribeLink != null)
@@ -103,6 +85,17 @@ namespace MailDispatcher.Storage
             msg.WriteTo(ms);
             ms.Seek(0, SeekOrigin.Begin);
             return (ms, recipients);
+
+            static void AddRecipients(string[]? list, InternetAddressList? addressList, List<string> recipients)
+            {
+                if (list == null)
+                    return;
+                foreach(var r in list)
+                {
+                    recipients.Add(r);
+                    addressList?.Add(MailboxAddress.Parse(r));
+                }
+            }
         }
     }
 }
