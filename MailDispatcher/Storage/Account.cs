@@ -1,11 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos.Table;
-using Microsoft.Extensions.Caching;
-using Microsoft.Extensions.DependencyInjection;
 using MimeKit.Cryptography;
-using System;
 using System.IO;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace MailDispatcher.Storage
 {
@@ -47,22 +43,6 @@ namespace MailDispatcher.Storage
             {
                 signer = null;
             }
-        }
-    }
-
-    [DIRegister(ServiceLifetime.Singleton)]
-    public class AccountRepository: CachedTableRepository<Account> {
-        public AccountRepository(AzureStorage storage, AppCache<Account> cache): base(storage, cache)
-        {
-
-        }
-
-        public override async Task<Account> UpdateAsync(string rowKey, Func<Account, Account> update)
-        {
-
-            var a = await base.UpdateAsync(rowKey, update);
-            a.DkimSigner = null;
-            return a;
         }
     }
 

@@ -14,12 +14,12 @@ namespace MailDispatcher.Services
 {
     public class DispatchService: BackgroundService
     {
-        private readonly JobStorage jobs;
+        private readonly JobQueueService jobs;
         private readonly TelemetryClient telemetry;
         private readonly SmtpService smtpService;
 
         public DispatchService(
-            JobStorage jobs,
+            JobQueueService jobs,
             TelemetryClient telemetry, 
             SmtpService smtpService)
         {
@@ -46,6 +46,10 @@ namespace MailDispatcher.Services
         private async Task SendEmailsAsync(CancellationToken stoppingToken)
         {
             var jobs = await this.jobs.DequeueAsync(stoppingToken);
+            if(jobs.Length == 0)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(1));
+            }
             await Task.WhenAll(jobs.Select(x => SendEmailAsync(x, stoppingToken)));
         }
 
@@ -82,10 +86,7 @@ namespace MailDispatcher.Services
 
             message.Responses = r;
 
-            if (r.Any(x => x.Sent == null))
-                return;
-
-            await jobs.RemoveAsync(message);
+            await jobs.UpdateAsync(message);
             
         }
 

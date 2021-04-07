@@ -16,112 +16,18 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Storage
 {
 
-    public class SimpleMail
-    {
-        public string From { get; set; }
-        public string[] To { get; set; }
-
-        public string[] Cc { get; set; }
-
-        public string[] Bcc { get; set; }
-
-        public string Subject { get; set; }
-
-        public string TextBody { get; set; }
-
-        public string HtmlBody { get; set; }
-    }
-
-    public class RawMessageRequest
-    {
-        public string From { get; set; }
-
-        public string[] Recipients { get; set; }
-
-        public string Content { get; set; }
-    }
-
-    public class JobResponse
-    {
-        public string Domain { get; set; }
-
-        public string Error { get; set; }
-
-        public string Warning { get; set; }
-
-        public DateTime? Sent { get; set; }
-
-        [IgnoreProperty]
-        public bool Success => Sent != null && string.IsNullOrEmpty(Error);
-
-        public void AppendError(string error)
-        {
-            if(Error==null)
-            {
-                Error = error;
-                return;
-            }
-
-            Error += "\r\n" + error;
-        }
-    }
-    public class Job: TableEntity
-    {
-        public string AccountID { get; set; }
-
-        public string From { get; set; }
-        public string Recipients { get; set; }
-
-        public string Url { get; set; }
-
-        public DateTime? Locked { get; set; }
-
-        public int Tries { get; set; }
-
-        public string ResponsesJson
-        {
-            get => Responses == null ? null : JsonSerializer.Serialize(Responses);
-            set => Responses = value == null ? null : JsonSerializer.Deserialize<JobResponse[]>(value);
-        }
-
-        [IgnoreProperty]
-        public JobResponse[] Responses { get; set; }
-
-        [IgnoreProperty]
-        public BlobClient Message { get; set; }
-
-        [IgnoreProperty]
-        public Account Account { get; set; }
-
-        [IgnoreProperty]
-        public string PopReceipt { get; set; }
-
-        [IgnoreProperty]
-        public byte[] Data { get; internal set; }
-        public string QueueID { get; set; }
-    }
-    
     [DIRegister(ServiceLifetime.Singleton)]
-    public class JobRepository: TableRepository<Job>
-    {
-        public JobRepository(AzureStorage storage): base(storage)
-        {
-
-        }
-    }
-
-    [DIRegister(ServiceLifetime.Singleton)]
-    public class JobStorage
+    public class JobQueueService
     {
         private readonly CloudTable Identity;
-        private readonly AccountRepository accountRepository;
+        private readonly AccountService accountRepository;
         private readonly JobRepository repository;
         private readonly BlobContainerClient blobs;
         private readonly BlobContainerClient reports;
         private readonly QueueClient queue;
 
-        public JobStorage(
-            AccountRepository accountRepository,
+        public JobQueueService(
+            AccountService accountRepository,
             AzureStorage storage,
             JobRepository repository)
         {
@@ -166,10 +72,22 @@ namespace MailDispatcher.Storage
 
         }
 
-        public async Task RemoveAsync(Job job)
+        //public async Task RemoveAsync(Job job)
+        //{
+        //    await job.Message.DeleteIfExistsAsync();
+        //    await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
+        //}
+
+        public async Task UpdateAsync(Job job)
         {
-            await job.Message.DeleteIfExistsAsync();
-            await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
+            await repository.SaveAsync(job);
+            if (job.Responses != null)
+            {
+                if (!job.Responses.Any(y => y.Sent == null))
+                {
+                    await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
+                }
+            }
         }
 
 

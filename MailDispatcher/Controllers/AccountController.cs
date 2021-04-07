@@ -38,7 +38,7 @@ namespace MailDispatcher.Controllers
 
         [HttpGet()]
         public async Task<IEnumerable<AccountInfo>> Get(
-            [FromServices] AccountRepository repository
+            [FromServices] AccountService repository
             )
         {
             var list = new List<Account>();
@@ -60,7 +60,7 @@ namespace MailDispatcher.Controllers
 
         [HttpPost]
         public async Task<AccountInfo> Post(
-            [FromServices] AccountRepository repository,
+            [FromServices] AccountService repository,
             [FromBody] PutBody model)
         {
             var a = await repository.GetAsync(model.ID);
@@ -72,7 +72,7 @@ namespace MailDispatcher.Controllers
 
         [HttpPut()]
         public async Task<AccountInfo> Put(
-            [FromServices] AccountRepository repository,
+            [FromServices] AccountService repository,
             [FromBody] PutBody model
         )
         {
@@ -83,7 +83,7 @@ namespace MailDispatcher.Controllers
                 ID = model.ID,
                 Selector = model.Selector,
                 DomainName = model.DomainName,
-                PublicKey = Convert.ToBase64String( rsa.ExportRSAPublicKey()),
+                PublicKey = rsa.ExportPemPublicKey(),
                 PrivateKey = rsa.ExportPem(),
                 AuthKey = Guid.NewGuid().ToHexString()
             });

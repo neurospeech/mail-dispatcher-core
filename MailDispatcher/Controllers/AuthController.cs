@@ -36,7 +36,7 @@ namespace MailDispatcher.Controllers
 
         [HttpPut("login")]
         public async Task<object> Login(
-            [FromServices] AccountRepository accountRepository,
+            [FromServices] AccountService accountRepository,
             [FromServices] HashService hashService,
             [FromBody] LoginModel model
             )

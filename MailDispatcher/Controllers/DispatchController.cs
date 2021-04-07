@@ -18,8 +18,8 @@ namespace MailDispatcher.Controllers
     {
         [HttpPut("simple")]
         public async Task<IActionResult> Simple(
-            [FromServices] AccountRepository accountRepository,
-            [FromServices] JobStorage jobs,
+            [FromServices] AccountService accountRepository,
+            [FromServices] JobQueueService jobs,
             [FromHeader(Name = "x-id")] string id,
             [FromHeader(Name = "x-auth")] string auth,
             [FromBody] SimpleMail model)
@@ -34,22 +34,23 @@ namespace MailDispatcher.Controllers
                     (model.To?.Length ?? 0) +
                     (model.Cc?.Length ?? 0) +
                     (model.Bcc?.Length ?? 0));
-            if (recipients.Count == 0)
+            if (recipients.Capacity == 0)
                 return BadRequest("Need at least one recipient");
-            foreach(var to in model.To)
-            {
+            foreach(var to in model.To) {
                 msg.To.Add(MailboxAddress.Parse(to));
                 recipients.Add(to);
             }
-            foreach (var to in model.Cc)
-            {
-                msg.Cc.Add(MailboxAddress.Parse(to));
-                recipients.Add(to);
+            if (model.Cc != null) {
+                foreach (var to in model.Cc) {
+                    msg.Cc.Add(MailboxAddress.Parse(to));
+                    recipients.Add(to);
+                }
             }
-            foreach (var to in model.Bcc)
-            {
-                msg.Bcc.Add(MailboxAddress.Parse(to));
-                recipients.Add(to);
+            if (model.Bcc != null) {
+                foreach (var to in model.Bcc) {
+                    msg.Bcc.Add(MailboxAddress.Parse(to));
+                    recipients.Add(to);
+                }
             }
             var ms = new MemoryStream();
             msg.WriteTo(ms);
@@ -67,8 +68,8 @@ namespace MailDispatcher.Controllers
 
         [HttpPut("raw")]
         public async Task<IActionResult> Put(
-            [FromServices] AccountRepository accountRepository,
-            [FromServices] JobStorage jobs,
+            [FromServices] AccountService accountRepository,
+            [FromServices] JobQueueService jobs,
             [FromHeader(Name = "x-id")] string id,
             [FromHeader(Name = "x-auth")] string auth,
             [FromBody] RawMessageRequest model
