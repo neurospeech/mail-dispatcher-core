@@ -85,17 +85,18 @@ namespace MailDispatcher.Storage
 
         public async Task UpdateAsync(Job job)
         {
+            bool completed = false;
             if(!job.Responses.Any(y => y.Sent == null))
             {
                 job.Status = "Completed";
+                completed = true;
             }
             await repository.SaveAsync(job);
-            if (job.Responses != null)
+            
+            if (completed)
             {
-                if (!job.Responses.Any(y => y.Sent == null))
-                {
-                    await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
-                }
+                await job.Message.DeleteIfExistsAsync();
+                await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
             }
         }
 
