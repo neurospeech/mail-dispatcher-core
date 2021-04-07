@@ -14,6 +14,12 @@ namespace MailDispatcher.Services
 {
     public class DispatchService: BackgroundService
     {
+        private static CancellationTokenSource WaitTokenSource = null;
+        public static void Signal()
+        {
+            WaitTokenSource?.Cancel();
+        }
+
         private readonly JobQueueService jobs;
         private readonly TelemetryClient telemetry;
         private readonly SmtpService smtpService;
@@ -48,7 +54,15 @@ namespace MailDispatcher.Services
             var jobs = await this.jobs.DequeueAsync(stoppingToken);
             if(jobs.Length == 0)
             {
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                var c = new CancellationTokenSource();
+                try {
+                    await Task.Delay(TimeSpan.FromMinutes(1), c.Token);
+                } catch (TaskCanceledException) {
+
+                }
+                var old = WaitTokenSource;
+                old?.Dispose();
+                WaitTokenSource = c;
             }
             await Task.WhenAll(jobs.Select(x => SendEmailAsync(x, stoppingToken)));
         }

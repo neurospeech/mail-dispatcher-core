@@ -18,6 +18,8 @@ namespace MailDispatcher.Storage
 
         public int Tries { get; set; }
 
+        public string Status { get; set; }
+
         public string ResponsesJson
         {
             get => Responses == null ? null : JsonSerializer.Serialize(Responses);

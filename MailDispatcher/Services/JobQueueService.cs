@@ -60,7 +60,8 @@ namespace MailDispatcher.Storage
                 From = message.From,
                 Recipients = JsonSerializer.Serialize(message.Recipients),
                 RowKey = id.ToString(),
-                Url = blob.Uri.ToString()
+                Url = blob.Uri.ToString(),
+                Status = "Queued"
             };
 
 
@@ -79,6 +80,10 @@ namespace MailDispatcher.Storage
 
         public async Task UpdateAsync(Job job)
         {
+            if(!job.Responses.Any(y => y.Sent == null))
+            {
+                job.Status = "Completed";
+            }
             await repository.SaveAsync(job);
             if (job.Responses != null)
             {
