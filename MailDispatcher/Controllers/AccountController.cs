@@ -1,4 +1,5 @@
-﻿using MailDispatcher.Storage;
+﻿using MailDispatcher.Core.Auth;
+using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -58,7 +59,8 @@ namespace MailDispatcher.Controllers
             public string Selector { get; set; }
         }
 
-        [HttpPost]
+
+        [HttpPost("new")]
         public async Task<AccountInfo> Post(
             [FromServices] AccountService repository,
             [FromBody] PutBody model)
@@ -70,7 +72,7 @@ namespace MailDispatcher.Controllers
         }
         
 
-        [HttpPut()]
+        [HttpPut("reset")]
         public async Task<AccountInfo> Put(
             [FromServices] AccountService repository,
             [FromBody] PutBody model

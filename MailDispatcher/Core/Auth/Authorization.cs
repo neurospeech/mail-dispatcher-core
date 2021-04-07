@@ -46,7 +46,7 @@ namespace MailDispatcher.Core.Auth
         /// <summary>
         /// 
         /// </summary>
-        public AuthorizeRoleAttribute(string role) : base(typeof(AllowAnonymousFilter))
+        public AuthorizeRoleAttribute(string role = null) : base(typeof(AllowAnonymousFilter))
         {
             this.Arguments = new object[] { role };
         }

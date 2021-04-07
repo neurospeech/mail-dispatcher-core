@@ -23,7 +23,8 @@ namespace MailDispatcher.Storage
 
         public string PublicKey { get; set; }
 
-        [JsonIgnore]
+        public bool Active { get; set; }
+
         public string Password { get; set; }
 
         private DkimSigner signer;
