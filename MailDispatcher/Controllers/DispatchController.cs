@@ -28,10 +28,7 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != auth)
                 return Unauthorized();
             var (ms, recipients) = model.ToMessage(Request.Form.Files);
-            var r = await jobs.Queue(id, new RawMessageRequest { 
-                From = model.From,
-                Recipients = recipients.ToArray()
-            }, ms);
+            var r = await jobs.Queue(id, model.From, recipients, ms);
             return Ok(new
             {
                 id = r
@@ -55,8 +52,16 @@ namespace MailDispatcher.Controllers
             var file = Request.Form.Files.FirstOrDefault();
             if (file == null)
                 return BadRequest();
-
-            var r = await jobs.Queue(id, model, file.OpenReadStream());
+            if (model.From == null)
+                return BadRequest("From is missing");
+            if (model.Recipients == null)
+                return BadRequest("Recipient is missing");
+            var recipients =
+                    model.Recipients
+                        .Split(',')
+                        .Select(x => x.Trim())
+                        .Where(x => x.Length > 0);
+            var r = await jobs.Queue(id, model.From, recipients, file.OpenReadStream());
             return Ok(new { 
                 id = r
             });

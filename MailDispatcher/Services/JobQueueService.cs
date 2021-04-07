@@ -43,7 +43,8 @@ namespace MailDispatcher.Storage
 
         public async Task<string> Queue(
             string accountId,
-            RawMessageRequest message,
+            string from,
+            IEnumerable<string> recipients,
             Stream file)
         {
 
@@ -57,8 +58,8 @@ namespace MailDispatcher.Storage
 
             var body = new Job() {
                 AccountID = accountId,
-                From = message.From,
-                Recipients = JsonSerializer.Serialize(message.Recipients),
+                From = from,
+                Recipients = JsonSerializer.Serialize(recipients),
                 RowKey = id.ToString(),
                 Url = blob.Uri.ToString(),
                 Status = "Queued"
