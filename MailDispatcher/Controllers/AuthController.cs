@@ -82,10 +82,10 @@ namespace MailDispatcher.Controllers
             }
 
             if (user.Password != hashService.Hash(user.ID, model.Password))
-                return Unauthorized();
+                return Unauthorized("Password mismatch");
 
             if (!user.Active)
-                return this.Forbid("Account is not active");
+                return Unauthorized("Account is not active");
 
             var claimsIdentity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
             claimsIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.ID));
