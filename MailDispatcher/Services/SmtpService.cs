@@ -1,6 +1,7 @@
 ﻿using MailDispatcher.Storage;
 using MailKit.Net.Smtp;
 using Microsoft.ApplicationInsights;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MimeKit;
 using MimeKit.Cryptography;
@@ -18,11 +19,16 @@ namespace MailDispatcher.Services
     {
         private readonly DnsLookupService lookupService;
         private readonly TelemetryClient telemetryClient;
+        private readonly string localHost;
 
-        public SmtpService(DnsLookupService lookupService, TelemetryClient telemetryClient)
+        public SmtpService(
+            DnsLookupService lookupService, 
+            TelemetryClient telemetryClient,
+            IConfiguration configuration)
         {
             this.lookupService = lookupService;
             this.telemetryClient = telemetryClient;
+            this.localHost = configuration.GetSection("Smtp").GetValue<string>("Local");
         }
 
         internal async Task<(bool sent, string error)> SendAsync(string domain, Job message, List<string> addresses, CancellationToken token)
@@ -52,6 +58,7 @@ namespace MailDispatcher.Services
         internal async Task<(SmtpClient smtpClient, string error)> NewClient(string domain)
         {
             var client = new SmtpClient();
+            client.LocalDomain = localHost;
             client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             var mxes = await lookupService.LookupAsync(domain);
 
