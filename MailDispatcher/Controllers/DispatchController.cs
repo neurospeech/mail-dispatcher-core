@@ -42,7 +42,7 @@ namespace MailDispatcher.Controllers
             [FromServices] JobQueueService jobs,
             [FromHeader(Name = "x-id")] string id,
             [FromHeader(Name = "x-auth")] string auth,
-            [FromBody] RawMessageRequest model
+            [FromForm] RawMessageRequest model
             )
         {
             var a = await accountRepository.GetAsync(id);
