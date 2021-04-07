@@ -20,7 +20,7 @@ export default class TabHost extends AtomGridView {
 			<div
 				row="0"
 				column="0"
-				class="heading-title">800Admin</div>
+				class="heading-title">Mail Dispatcher</div>
 			<div
 				row="0"
 				column="1"

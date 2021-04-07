@@ -27,9 +27,6 @@ export default class AccountList extends AtomGridView {
                             <td>
                                 <span text={BindAccount.oneWay((x) => x.data.selector)}/>
                             </td>
-                            <td>
-                                <span text={BindAccount.oneWay((x) => x.data.publicKey)}/>
-                            </td>
                         </tr>
                     </AtomItemsControl.itemTemplate>
                 </AtomItemsControl>

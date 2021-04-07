@@ -1,15 +1,23 @@
 import DISingleton from "@web-atoms/core/dist/di/DISingleton";
 import { Inject } from "@web-atoms/core/dist/di/Inject";
-import BaseUrl, { BaseService, Body, Delete, Get, Path, Post, Put, Query } from "@web-atoms/core/dist/services/http/RestService";
+import BaseUrl, {
+    BaseService, Body, Delete, Get, Path, Post, Put,
+    Query } from "@web-atoms/core/dist/services/http/RestService";
 import { NavigationService } from "@web-atoms/core/dist/services/NavigationService";
-import Login from "../auth/Login";
+import Login from "../auth/login/Login";
 
 export interface IUser {
     id?: string;
 }
 
+export interface IPasswordModel {
+    oldPassword?: string;
+    newPassword?: string;
+    newPasswordAgain?: string;
+}
+
 @DISingleton()
-@BaseUrl("/api/auth")
+@BaseUrl("/api/auth/")
 export default class AuthService extends BaseService {
 
     public showProgress = false;
@@ -34,6 +42,16 @@ export default class AuthService extends BaseService {
         username: string,
         password: string
     }): Promise<IUser> {
+        return null;
+    }
+
+    @Post("password")
+    public changePassword(@Body model: IPasswordModel) {
+        return null;
+    }
+
+    @Delete("")
+    public logout() {
         return null;
     }
 

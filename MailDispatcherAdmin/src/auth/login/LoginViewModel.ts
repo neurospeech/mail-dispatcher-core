@@ -2,7 +2,7 @@ import { Inject } from "@web-atoms/core/dist/di/Inject";
 import Action from "@web-atoms/core/dist/view-model/Action";
 import { Validate } from "@web-atoms/core/dist/view-model/AtomViewModel";
 import { AtomWindowViewModel } from "@web-atoms/core/dist/view-model/AtomWindowViewModel";
-import AuthService from "../services/AuthService";
+import AuthService from "../../services/AuthService";
 
 export default class LoginViewModel extends AtomWindowViewModel {
 

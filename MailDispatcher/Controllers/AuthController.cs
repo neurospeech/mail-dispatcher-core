@@ -26,6 +26,13 @@ namespace MailDispatcher.Controllers
 
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> Logout()
+        {
+            await this.HttpContext.SignOutAsync();
+            return Ok();
+        }
+
         [HttpGet]
         public object Get()
         {
