@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
+using MailDispatcher.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,6 +70,9 @@ namespace MailDispatcher.Storage
             var qid = await queue.SendMessageAsync(id, TimeSpan.FromMilliseconds(500));
             body.QueueID = qid.Value.MessageId;
             await repository.SaveAsync(body);
+
+            DispatchService.Signal();
+
             return id;
 
         }
