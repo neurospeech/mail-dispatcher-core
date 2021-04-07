@@ -16,18 +16,15 @@ namespace MailDispatcher.Services
     {
         private readonly JobStorage jobs;
         private readonly TelemetryClient telemetry;
-        private readonly JobResponseRepository responseRepository;
         private readonly SmtpService smtpService;
 
         public DispatchService(
             JobStorage jobs,
             TelemetryClient telemetry, 
-            JobResponseRepository responseRepository,
             SmtpService smtpService)
         {
             this.jobs = jobs;
             this.telemetry = telemetry;
-            this.responseRepository = responseRepository;
             this.smtpService = smtpService;
         }
 
@@ -70,10 +67,23 @@ namespace MailDispatcher.Services
                 .GroupBy(x => x.domain)
                 .ToList();
 
+            var domains = rlist.Count;
+            if(message.Responses == null)
+            {
+                message.Responses = new JobResponse[domains];
+                int i = 0;
+                foreach(var domain in rlist)
+                {
+                    message.Responses[i++] = new JobResponse { Domain = domain.Key };
+                }
+            }
 
             var r = await Task.WhenAll(rlist.Select(x => SendEmailAsync(message, x.Key, x.Select(x => x.address).ToList(), token) ));
 
+            message.Responses = r;
 
+            if (r.Any(x => x.Sent == null))
+                return;
 
             await jobs.RemoveAsync(message);
             
@@ -81,32 +91,43 @@ namespace MailDispatcher.Services
 
 
 
-        private async Task<(bool done, string error)> SendEmailAsync(
+        private async Task<JobResponse> SendEmailAsync(
             Job message, 
             string domain, 
             List<string> addresses, 
             CancellationToken token)
         {
+            var r = message.Responses.FirstOrDefault(x => x.Domain == domain);
             if(message.Locked != null)
             {
                 if (message.Locked > DateTime.UtcNow)
-                    return (false, null);
+                {
+                    return r;
+                }
             }
             if (message.Tries> 3)
             {
-                return (true, "Failed after 3 retries");
+                r.Sent = DateTime.UtcNow;
+                r.AppendError("Failed after 3 retries");
+                return r;
             }
             var (sent, error) = await smtpService.SendAsync(domain, message, addresses, token);
             var now = DateTime.UtcNow;
             if(error != null)
             {
                 message.Locked = now.AddMinutes( (message.Tries + 1) * 15);
+                r.AppendError(error);
             }
             if(!sent)
             {
                 message.Tries++;
-            } 
-            return (sent, error);
+            } else
+            {
+                r.Sent = DateTime.UtcNow;
+                r.Warning = error;
+                r.Error = null;
+            }
+            return r;
         }
     }
 }
