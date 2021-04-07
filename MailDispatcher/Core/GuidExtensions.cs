@@ -7,6 +7,17 @@ using System.Threading.Tasks;
 
 namespace MailDispatcher
 {
+
+    public static class MailBoxExtensions
+    {
+
+        public static string ToEmailAddress(this SmtpServer.Mail.IMailbox mb)
+        {
+            return $"{mb.User}@{mb.Host}";
+        }
+
+    }
+
     public static class RSAExtensions
     {
         public static string ExportPem(this RSA rsa)

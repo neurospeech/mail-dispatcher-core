@@ -1,4 +1,5 @@
 using MailDispatcher.Services;
+using MailDispatcher.Services.Receiver;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,9 @@ namespace MailDispatcher
                     webBuilder.UseStartup<Startup>();
                 })
             .ConfigureServices(services =>
-            services.AddHostedService<DispatchService>());
+            {
+                services.AddHostedService<DispatchService>();
+                services.AddHostedService<SmtpReceiver>();
+            });
     }
 }

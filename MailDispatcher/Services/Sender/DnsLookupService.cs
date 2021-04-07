@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Services
@@ -26,7 +28,31 @@ namespace MailDispatcher.Services
             this.cache = cache;
         }
 
-        public async Task<string[]> LookupAsync(string domain)
+        public string LookupTXT(string domain)
+        {
+            var r = client.Query(domain, QueryType.TXT);
+            StringBuilder sb = new StringBuilder();
+            foreach (var item in r.Answers.TxtRecords())
+            {
+                sb.Append(item.Text);
+            }
+            return sb.ToString();
+        }
+
+
+
+        public async Task<string> LookupTXTAsync(string domain, CancellationToken cancellationToken)
+        {
+            var r = await client.QueryAsync(domain, QueryType.TXT, cancellationToken: cancellationToken);
+            StringBuilder sb = new StringBuilder();
+            foreach(var item in r.Answers.TxtRecords())
+            {
+                sb.Append(item.Text);
+            }
+            return sb.ToString();
+        }
+
+        public async Task<string[]> LookupMXAsync(string domain)
         {
             var lr = await cache.GetOrCreateAsync(domain, async x => {
                 var r = await client.QueryAsync(domain, QueryType.MX);

@@ -1,4 +1,5 @@
-﻿using MailDispatcher.Storage;
+﻿using MailDispatcher.Config;
+using MailDispatcher.Storage;
 using MailKit.Net.Smtp;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
@@ -24,11 +25,11 @@ namespace MailDispatcher.Services
         public SmtpService(
             DnsLookupService lookupService, 
             TelemetryClient telemetryClient,
-            IConfiguration configuration)
+            SmtpConfig smtpConfig)
         {
             this.lookupService = lookupService;
             this.telemetryClient = telemetryClient;
-            this.localHost = configuration.GetSection("Smtp").GetValue<string>("Local");
+            this.localHost = smtpConfig.Host;
         }
 
         internal async Task<(bool sent, string error)> SendAsync(string domain, Job message, List<string> addresses, CancellationToken token)
@@ -43,8 +44,8 @@ namespace MailDispatcher.Services
                 try
                 {
                     msg.Date = DateTimeOffset.UtcNow;
+                    msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{message.RowKey}@{localHost}");
                     message.Account.DkimSigner.Sign(msg, new HeaderId[] { HeaderId.From, HeaderId.Subject, HeaderId.Date });
-
                     await client.SendAsync(msg, MailboxAddress.Parse(message.From), addresses.Select(x => MailboxAddress.Parse(x)), token);
                     return (true, null);
                 } catch (Exception ex)
@@ -60,7 +61,7 @@ namespace MailDispatcher.Services
             var client = new SmtpClient();
             client.LocalDomain = localHost;
             client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-            var mxes = await lookupService.LookupAsync(domain);
+            var mxes = await lookupService.LookupMXAsync(domain);
 
             foreach (var mx in mxes)
             {
