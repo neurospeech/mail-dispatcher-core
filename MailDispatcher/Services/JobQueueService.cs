@@ -52,10 +52,6 @@ namespace MailDispatcher.Storage
             var nid = await Identity.GenerateSequenceAsync();
             var id = $"{Guid.NewGuid().ToHexString()}-{nid}";
             var blob = blobs.GetBlobClient(id);
-            if (file != null)
-            {
-                await blob.UploadAsync(file);
-            }
 
             var body = new Job() {
                 AccountID = accountId,
@@ -66,10 +62,11 @@ namespace MailDispatcher.Storage
                 Status = "Queued"
             };
 
+            await Task.WhenAll(
+                blob.UploadAsync(file),
+                queue.SendMessageAsync(id, TimeSpan.FromMilliseconds(500)),
+                repository.SaveAsync(body));
 
-            var qid = await queue.SendMessageAsync(id, TimeSpan.FromMilliseconds(500));
-            body.QueueID = qid.Value.MessageId;
-            await repository.SaveAsync(body);
             DispatchService.Signal();
 
             return id;
@@ -90,12 +87,16 @@ namespace MailDispatcher.Storage
                 job.Status = "Completed";
                 completed = true;
             }
-            await repository.SaveAsync(job);
             
             if (completed)
             {
-                await job.Message.DeleteIfExistsAsync();
-                await queue.DeleteMessageAsync(job.QueueID, job.PopReceipt);
+                await Task.WhenAll(
+                    repository.SaveAsync(job),
+                    job.Message.DeleteIfExistsAsync(),
+                    queue.DeleteMessageAsync(job.QueueMessage.MessageId, job.QueueMessage.PopReceipt));
+            } else
+            {
+                await repository.SaveAsync(job);
             }
         }
 
@@ -107,9 +108,9 @@ namespace MailDispatcher.Storage
             var tasks = items.Value.Select(async x => {
                 var jobID = x.Body.ToString();
                 var msg = await repository.GetAsync(jobID);
+                msg.QueueMessage = x;
                 msg.Message = blobs.GetBlobClient(jobID);
                 msg.Account = await accountRepository.GetAsync(msg.AccountID);
-                msg.PopReceipt = x.PopReceipt;
                 return msg;
             }).ToList();
             if (tasks.Count == 0)

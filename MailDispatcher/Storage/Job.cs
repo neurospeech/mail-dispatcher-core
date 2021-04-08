@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Queues.Models;
 using Microsoft.Azure.Cosmos.Table;
 using System;
 using System.Text.Json;
@@ -36,10 +37,9 @@ namespace MailDispatcher.Storage
         public Account Account { get; set; }
 
         [IgnoreProperty]
-        public string PopReceipt { get; set; }
+        public byte[] Data { get; internal set; }
 
         [IgnoreProperty]
-        public byte[] Data { get; internal set; }
-        public string QueueID { get; set; }
+        public QueueMessage QueueMessage { get; internal set; }
     }
 }
