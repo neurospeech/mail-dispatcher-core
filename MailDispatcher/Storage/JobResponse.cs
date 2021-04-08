@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos.Table;
 using System;
+using System.Text.Json.Serialization;
 
 namespace MailDispatcher.Storage
 {
@@ -13,7 +14,7 @@ namespace MailDispatcher.Storage
 
         public DateTime? Sent { get; set; }
 
-        [IgnoreProperty]
+        [JsonIgnore]
         public bool Success => Sent != null && string.IsNullOrEmpty(Error);
 
         public string ErrorCode { get; set; }
