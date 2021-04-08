@@ -99,6 +99,7 @@ namespace MailDispatcher.Storage
             }
         }
 
+        private Job[] Empty = new Job[] { };
 
         public async Task<Job[]> DequeueAsync(CancellationToken stoppingToken)
         {
@@ -110,7 +111,9 @@ namespace MailDispatcher.Storage
                 msg.Account = await accountRepository.GetAsync(msg.AccountID);
                 msg.PopReceipt = x.PopReceipt;
                 return msg;
-            });
+            }).ToList();
+            if (tasks.Count == 0)
+                return Empty;
             return await Task.WhenAll(tasks);
         }
 
