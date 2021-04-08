@@ -64,6 +64,7 @@ namespace MailDispatcher.Services
                 } catch (TaskCanceledException) {
 
                 }
+                return;
             }
             await Task.WhenAll(jobs.Select(x => SendEmailAsync(x, stoppingToken)));
         }
