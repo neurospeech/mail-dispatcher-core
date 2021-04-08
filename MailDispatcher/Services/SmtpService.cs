@@ -44,8 +44,21 @@ namespace MailDispatcher.Services
                 try
                 {
                     msg.Date = DateTimeOffset.UtcNow;
+                    msg.MessageId = message.RowKey;
                     msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{message.RowKey}@{localHost}");
-                    message.Account.DkimSigner.Sign(msg, new HeaderId[] { HeaderId.From, HeaderId.Subject, HeaderId.Date });
+                    if(!msg.ReplyTo.Any())
+                    {
+                        msg.ReplyTo.Add(msg.From.First());
+                    }
+                    message.Account.DkimSigner.Sign(msg, new HeaderId[] {
+                        HeaderId.From,
+                        HeaderId.Subject,
+                        HeaderId.Date,
+                        HeaderId.MessageId,
+                        HeaderId.ReplyTo,
+                        HeaderId.MimeVersion,
+                        HeaderId.ContentType
+                    });
                     await client.SendAsync(msg, MailboxAddress.Parse(message.From), addresses.Select(x => MailboxAddress.Parse(x)), token);
                     return (true, null);
                 } catch (Exception ex)
