@@ -43,8 +43,9 @@ namespace MailDispatcher.Services
                 var msg = await MimeKit.MimeMessage.LoadAsync(new MemoryStream(message.Data), token);
                 try
                 {
-                    msg.Date = DateTimeOffset.UtcNow;
-                    msg.MessageId = message.RowKey;
+                    var now = DateTimeOffset.UtcNow;
+                    msg.Date = now;
+                    msg.MessageId = $"{message.RowKey}@{localHost}";
                     msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{message.RowKey}@{localHost}");
                     if(!msg.ReplyTo.Any())
                     {
