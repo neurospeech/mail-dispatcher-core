@@ -128,8 +128,12 @@ namespace MailDispatcher.Services
                 r.AppendError("Failed after 3 retries");
                 return r;
             }
-            var (sent, error) = await smtpService.SendAsync(domain, message, addresses, token);
+            var (sent, code, error) = await smtpService.SendAsync(domain, message, addresses, token);
             var now = DateTime.UtcNow;
+            if(code != null)
+            {
+                r.ErrorCode = code;
+            }
             if(error != null)
             {
                 message.Locked = now.AddMinutes( (message.Tries + 1) * 15);

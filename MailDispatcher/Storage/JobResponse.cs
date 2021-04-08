@@ -16,6 +16,8 @@ namespace MailDispatcher.Storage
         [IgnoreProperty]
         public bool Success => Sent != null && string.IsNullOrEmpty(Error);
 
+        public string ErrorCode { get; set; }
+
         public void AppendError(string error)
         {
             if(Error==null)

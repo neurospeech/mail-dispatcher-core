@@ -32,11 +32,11 @@ namespace MailDispatcher.Services
             this.localHost = smtpConfig.Host;
         }
 
-        internal async Task<(bool sent, string error)> SendAsync(string domain, Job message, List<string> addresses, CancellationToken token)
+        internal async Task<(bool sent, string code, string error)> SendAsync(string domain, Job message, List<string> addresses, CancellationToken token)
         {
             var (client, error) = await NewClient(domain);
             if (error != null)
-                return (false, error);
+                return (false, "ConnectivityError", error);
 
             using (client)
             {
@@ -60,10 +60,19 @@ namespace MailDispatcher.Services
                         HeaderId.ContentType
                     });
                     await client.SendAsync(msg, MailboxAddress.Parse(message.From), addresses.Select(x => MailboxAddress.Parse(x)), token);
-                    return (true, null);
+                    return (true, null, null);
+                } catch (SmtpCommandException ex) {
+                    switch(ex.ErrorCode)
+                    {
+                        case SmtpErrorCode.MessageNotAccepted:
+                        case SmtpErrorCode.SenderNotAccepted:
+                        case SmtpErrorCode.RecipientNotAccepted:
+                            return (true, ex.ErrorCode.ToString(), ex.ToString());
+                    }
+                    return (true, ex.StatusCode.ToString(), ex.ToString());
                 } catch (Exception ex)
                 {
-                    return (true, ex.ToString());
+                    return (true, "Unknown", ex.ToString());
                 }
 
             }
