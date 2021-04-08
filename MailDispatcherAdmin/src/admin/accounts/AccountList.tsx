@@ -13,8 +13,13 @@ export default class AccountList extends AtomGridView {
 
     public create() {
         this.viewModel = this.resolve(AccountListViewModel);
-        this.render(<AtomGridView>
+        this.render(<AtomGridView
+            rows="50,*">
             <div>
+                <button
+                    text="Add"/>
+            </div>
+            <div row="1">
                 <AtomItemsControl for="table" items={Bind.oneWay(() => this.viewModel.model)}>
                     <AtomItemsControl.itemTemplate>
                         <tr>
