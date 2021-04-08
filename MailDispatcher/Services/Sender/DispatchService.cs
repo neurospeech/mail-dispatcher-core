@@ -1,12 +1,11 @@
 ﻿using MailDispatcher.Storage;
-using MailKit.Net.Smtp;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -80,7 +79,7 @@ namespace MailDispatcher.Services
                 message.Data = data;
             }
 
-            var rlist = JsonConvert.DeserializeObject<string[]>(message.Recipients)
+            var rlist = JsonSerializer.Deserialize<string[]>(message.Recipients)
                 .Select(x => (tokens: x.ToLower().Split('@'),address: x))
                 .Where(x => x.tokens.Length > 1)
                 .Select(x => ( domain: x.tokens.Last(), x.address ))
