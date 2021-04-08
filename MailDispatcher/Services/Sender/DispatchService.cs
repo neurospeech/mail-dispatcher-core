@@ -55,14 +55,15 @@ namespace MailDispatcher.Services
             if(jobs.Length == 0)
             {
                 var c = new CancellationTokenSource();
-                try {
+                var old = WaitTokenSource;
+                old?.Dispose();
+                WaitTokenSource = c;
+                try
+                {
                     await Task.Delay(TimeSpan.FromMinutes(1), c.Token);
                 } catch (TaskCanceledException) {
 
                 }
-                var old = WaitTokenSource;
-                old?.Dispose();
-                WaitTokenSource = c;
             }
             await Task.WhenAll(jobs.Select(x => SendEmailAsync(x, stoppingToken)));
         }

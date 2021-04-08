@@ -70,7 +70,6 @@ namespace MailDispatcher.Storage
             var qid = await queue.SendMessageAsync(id, TimeSpan.FromMilliseconds(500));
             body.QueueID = qid.Value.MessageId;
             await repository.SaveAsync(body);
-
             DispatchService.Signal();
 
             return id;
