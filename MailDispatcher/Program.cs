@@ -27,7 +27,6 @@ namespace MailDispatcher
                 })
             .ConfigureServices(services =>
             {
-                services.AddHostedService<DispatchService>();
                 services.AddHostedService<SmtpReceiver>();
             });
     }

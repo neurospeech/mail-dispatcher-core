@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.Cosmos.Table;
+﻿using MailDispatcher.Services.Jobs;
 using System;
 using System.Text.Json.Serialization;
 
@@ -14,20 +14,7 @@ namespace MailDispatcher.Storage
 
         public DateTime? Sent { get; set; }
 
-        [JsonIgnore]
-        public bool Success => Sent != null && string.IsNullOrEmpty(Error);
-
         public string ErrorCode { get; set; }
-
-        public void AppendError(string error)
-        {
-            if(Error==null)
-            {
-                Error = error;
-                return;
-            }
-
-            Error += "\r\n" + error;
-        }
+        public Notification[] Notifications { get; set; }
     }
 }

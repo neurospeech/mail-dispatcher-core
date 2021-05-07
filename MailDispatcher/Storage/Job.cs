@@ -1,19 +1,17 @@
 ﻿using Azure.Storage.Blobs;
-using Azure.Storage.Queues.Models;
-using Microsoft.Azure.Cosmos.Table;
+using Newtonsoft.Json;
 using System;
-using System.Text.Json;
 
 namespace MailDispatcher.Storage
 {
-    public class Job: TableEntity
+    public class Job
     {
         public string AccountID { get; set; }
 
         public string From { get; set; }
         public string Recipients { get; set; }
 
-        public string Url { get; set; }
+        public string MessageBodyUrl { get; set; }
 
         public DateTime? Locked { get; set; }
 
@@ -23,23 +21,12 @@ namespace MailDispatcher.Storage
 
         public string ResponsesJson
         {
-            get => Responses == null ? null : JsonSerializer.Serialize(Responses);
-            set => Responses = value == null ? null : JsonSerializer.Deserialize<JobResponse[]>(value);
+            get => Responses == null ? null : JsonConvert.SerializeObject(Responses);
+            set => Responses = value == null ? null : JsonConvert.DeserializeObject<JobResponse[]>(value);
         }
 
-        [IgnoreProperty]
+        [JsonIgnore]
         public JobResponse[] Responses { get; set; }
-
-        [IgnoreProperty]
-        public BlobClient Message { get; set; }
-
-        [IgnoreProperty]
-        public Account Account { get; set; }
-
-        [IgnoreProperty]
-        public byte[] Data { get; internal set; }
-
-        [IgnoreProperty]
-        public QueueMessage QueueMessage { get; internal set; }
+        public string RowKey { get; set; }
     }
 }

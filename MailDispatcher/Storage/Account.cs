@@ -27,6 +27,13 @@ namespace MailDispatcher.Storage
 
         public string Password { get; set; }
 
+        public string Notifications { get; set; }
+
+        public string BounceNoticeEmails { get; set; }
+
+        public string BounceTriggers { get; set; }
+
+
         private DkimSigner signer;
         [IgnoreProperty]
         [JsonIgnore]

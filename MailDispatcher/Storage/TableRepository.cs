@@ -55,8 +55,7 @@ namespace MailDispatcher.Storage
 
         public TableRepository(AzureStorage storage)
         {
-            this.table = storage.CloudTableClient.GetTableReference(typeof(T).FullName.Replace(".","").ToLower());
-            table.CreateIfNotExists();
+            this.table = storage.CloudTableClient.GetTableReference(typeof(T).FullName.Replace(".","").ToLower());            
             this.partitionKey = typeof(T).Name;
         }
 

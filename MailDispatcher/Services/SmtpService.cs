@@ -1,4 +1,5 @@
 ﻿using MailDispatcher.Config;
+using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using MailKit.Net.Smtp;
 using Microsoft.ApplicationInsights;
@@ -10,37 +11,56 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Services
 {
+
+    public class SmtpResponse
+    {
+        public bool Sent { get; set; }
+    }
+
     [DIRegister(ServiceLifetime.Singleton)]
     public class SmtpService
     {
+        private readonly HttpClient httpClient;
         private readonly DnsLookupService lookupService;
         private readonly TelemetryClient telemetryClient;
+        private readonly AccountService accountService;
         private readonly string localHost;
 
         public SmtpService(
             DnsLookupService lookupService, 
             TelemetryClient telemetryClient,
-            SmtpConfig smtpConfig)
+            SmtpConfig smtpConfig,
+            AccountService accountService)
         {
+            this.httpClient = new HttpClient();
             this.lookupService = lookupService;
             this.telemetryClient = telemetryClient;
+            this.accountService = accountService;
             this.localHost = smtpConfig.Host;
         }
 
-        internal async Task<(bool sent, string code, string error)> SendAsync(string domain, Job message, List<string> addresses, CancellationToken token)
+        internal async Task<(bool sent, string code, string error)> SendAsync(DomainJob domainJob, CancellationToken token = default)
         {
+            var domain = domainJob.Domain;
+            var message = domainJob.Job;
+
+            var account = await accountService.GetAsync(message.AccountID);
+
+            var addresses = domainJob.Addresses;
             var (client, error) = await NewClient(domain);
             if (error != null)
                 return (false, "ConnectivityError", error);
 
             using (client)
             {
-                var msg = await MimeKit.MimeMessage.LoadAsync(new MemoryStream(message.Data), token);
+                var msg = await MimeKit.MimeMessage.LoadAsync(await httpClient.GetStreamAsync(message.MessageBodyUrl), token);
                 try
                 {
                     var now = DateTimeOffset.UtcNow;
@@ -51,7 +71,7 @@ namespace MailDispatcher.Services
                     {
                         msg.ReplyTo.Add(msg.From.First());
                     }
-                    message.Account.DkimSigner.Sign(msg, new HeaderId[] {
+                    account.DkimSigner.Sign(msg, new HeaderId[] {
                         HeaderId.From,
                         HeaderId.Subject,
                         HeaderId.Date,
@@ -76,6 +96,38 @@ namespace MailDispatcher.Services
                     return (true, "Unknown", ex.ToString());
                 }
 
+            }
+        }
+
+        internal async Task<Notification[]> NotifyAsync(string bounceTriggers, string postBody, DomainJob job)
+        {
+            var postContent = new StringContent(postBody, System.Text.Encoding.UTF8, "application/json");
+
+
+            return await Task.WhenAll(bounceTriggers.Split('\n')
+                .Select(x => x.Trim())
+                .Select(x => SendNotification(x, postContent))
+                .ToList());
+
+
+            async Task<Notification> SendNotification(string url, StringContent postBody)
+            {
+                var body = new HttpRequestMessage(HttpMethod.Post, url);
+                body.Content = postBody;
+                using (var s = await httpClient.SendAsync(body, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    if (s.IsSuccessStatusCode)
+                        return new Notification { 
+                            Url = url, 
+                            Sent = DateTime.UtcNow 
+                        };
+                    var error = await s.Content.ReadAsStringAsync();
+                    return new Notification { 
+                        Url = url,
+                        Sent = DateTime.UtcNow,
+                        Error = error.Length > 1024 ? error.Substring(0, 1024) : error
+                    };
+                }
             }
         }
 
