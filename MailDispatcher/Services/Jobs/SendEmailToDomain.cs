@@ -23,7 +23,7 @@ namespace MailDispatcher.Services.Jobs
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 3; i++)
             {
-                var (sent, code, error) =  await SendEmailAsync(input);
+                var (sent, code, error) =  await SendEmailAsync(input, i);
                 if (sent)
                 {
                     error = sb.ToString() + "\r\n" + error;
@@ -45,7 +45,7 @@ namespace MailDispatcher.Services.Jobs
                     });
 
                     // send bounce notice...
-                    var n = await SendBounceNoticeAsync((input, postBody));
+                    var n = await SendBounceNoticeAsync(input, postBody);
 
                     return new JobResponse
                     {
@@ -67,11 +67,11 @@ namespace MailDispatcher.Services.Jobs
 
         [Activity]
         public async virtual Task<Notification[]> SendBounceNoticeAsync(
-            (DomainJob input, string error) notification,
-            AccountService accountService = null,
-            SmtpService smtpService = null)
+            DomainJob input, 
+            string error,
+            [Inject] AccountService accountService = null,
+            [Inject] SmtpService smtpService = null)
         {
-            var (input, error) = notification;
             var acc = await accountService.GetAsync(input.Job.AccountID);
 
             if (string.IsNullOrWhiteSpace(acc.BounceTriggers))
@@ -83,7 +83,8 @@ namespace MailDispatcher.Services.Jobs
         [Activity]
         public virtual Task<(bool sent, string code, string error)> SendEmailAsync(
             DomainJob input,
-            SmtpService smtpService = null)
+            int i,
+            [Inject] SmtpService smtpService = null)
         {
             return smtpService.SendAsync(input);
         }
