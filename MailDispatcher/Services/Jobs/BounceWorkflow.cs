@@ -1,4 +1,5 @@
-﻿using MailDispatcher.Storage;
+﻿#nullable enable
+using MailDispatcher.Storage;
 using NeuroSpeech.Workflows;
 using System;
 using System.Collections.Generic;
@@ -9,17 +10,20 @@ namespace MailDispatcher.Services.Jobs
 {
     public class BounceNotification
     {
-        public string AccountID { get; set; }
-        public string Error { get; set; }
+        public string? AccountID { get; set; }
+        public string? Error { get; set; }
     }
 
     [Workflow]
-    public class BounceWorkflow : Workflow<BounceNotification, Notification[]>
+    public class BounceWorkflow : Workflow<BounceNotification, Notification[]?>
     {
-        public override async Task<Notification[]> RunTask(BounceNotification input)
+        public override async Task<Notification[]?> RunTask(BounceNotification input)
         {
             var accountID = input.AccountID;
-            string error = input.Error;
+            string? error = input.Error;
+
+            if (accountID == null || error == null)
+                return null;
 
             var urls = await GetUrlsAsync(accountID);
 
@@ -30,9 +34,10 @@ namespace MailDispatcher.Services.Jobs
         }
 
         [Activity]
-        public async Task<string[]> GetUrlsAsync(string accountID, [Inject] AccountService accountService = null)
+        public async Task<string[]> GetUrlsAsync(string accountID, 
+            [Inject] AccountService? accountService = null)
         {
-            var acc = await accountService.GetAsync(accountID);
+            var acc = await accountService!.GetAsync(accountID);
             if (acc.BounceTriggers == null)
                 return new string[] { };
 
@@ -47,9 +52,9 @@ namespace MailDispatcher.Services.Jobs
         public Task<Notification> NotifyAsync(
             string error, 
             string url,
-            [Inject] SmtpService smtpService = null)
+            [Inject] SmtpService? smtpService = null)
         {
-            return smtpService.NotifyAsync(url, error);
+            return smtpService!.NotifyAsync(url, error);
         }
     }
 }

@@ -25,7 +25,7 @@ namespace MailDispatcher.Services
             DurableTask.AzureStorage.AzureStorageOrchestrationServiceSettings settings = new DurableTask.AzureStorage.AzureStorageOrchestrationServiceSettings()
             {
                 StorageConnectionString = storage.ConnectionString,
-                TaskHubName = "mailq1",
+                TaskHubName = "mailq1"
             };
 
             this.service = new DurableTask.AzureStorage.AzureStorageOrchestrationService(settings);

@@ -1,4 +1,5 @@
-﻿using DurableTask.Core;
+﻿#nullable enable
+using DurableTask.Core;
 using MailDispatcher.Storage;
 using NeuroSpeech.Workflows;
 using System;
@@ -14,7 +15,7 @@ namespace MailDispatcher.Services.Jobs
     {
         public async override Task<JobResponse[]> RunTask(Job job)
         {
-            job.RowKey = context.OrchestrationInstance.InstanceId;
+            job.RowKey = context!.OrchestrationInstance.InstanceId;
             var rlist = job.Recipients.Split(',', ';')
                 .Select(x => x.Trim())
                 .Select(x => (tokens: x.ToLower().Split('@'), address: x))
@@ -33,7 +34,7 @@ namespace MailDispatcher.Services.Jobs
 
         public Task<JobResponse> SendEmailAsync(DomainJob job)
         {
-            return context.CreateSubOrchestrationInstance<JobResponse>(typeof(SendEmailToDomain), job);
+            return context!.CreateSubOrchestrationInstance<JobResponse>(typeof(SendEmailToDomain), job);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using MailDispatcher.Storage;
+﻿#nullable enable
+using MailDispatcher.Storage;
 using NeuroSpeech.Workflows;
 using System;
 using System.Text;
@@ -9,8 +10,8 @@ namespace MailDispatcher.Services.Jobs
 {
     public class Notification
     {
-        public string Url { get; set; }
-        public string Error { get; set; }
+        public string? Url { get; set; }
+        public string? Error { get; set; }
 
         public DateTime Sent { get; set; }
     }
@@ -26,14 +27,15 @@ namespace MailDispatcher.Services.Jobs
                 var (sent, code, error) =  await SendEmailAsync(input, i);
                 if (sent)
                 {
-                    error = sb.ToString() + "\r\n" + error;
                     if (error == null)
                     {
                         return new JobResponse { 
-                            Sent = context.CurrentUtcDateTime,
+                            Sent = context!.CurrentUtcDateTime,
                             Domain = input.Domain
                         };
                     }
+
+                    error = sb.ToString() + "\r\n" + error;
 
                     var postBody = JsonSerializer.Serialize(new
                     {
@@ -45,7 +47,7 @@ namespace MailDispatcher.Services.Jobs
                     });
 
                     // send bounce notice...
-                    var n = await context.CreateSubOrchestrationInstance<Notification[]>(
+                    var n = await context!.CreateSubOrchestrationInstance<Notification[]>(
                         typeof(BounceWorkflow), new BounceNotification { 
                             AccountID = input.Job.AccountID,
                             Error = postBody
@@ -73,9 +75,9 @@ namespace MailDispatcher.Services.Jobs
         public virtual Task<(bool sent, string code, string error)> SendEmailAsync(
             DomainJob input,
             int i,
-            [Inject] SmtpService smtpService = null)
+            [Inject] SmtpService? smtpService = null)
         {
-            return smtpService.SendAsync(input);
+            return smtpService!.SendAsync(input);
         }
     }
 }
