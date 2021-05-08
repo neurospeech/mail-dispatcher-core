@@ -28,8 +28,17 @@ namespace MailDispatcher.Services.Jobs
 
             var r = await Task.WhenAll(rlist);
 
+            await DeleteEmailAsync(job.BlobPath);
+
             return r;
 
+        }
+
+        [Activity]
+        public virtual async Task<string> DeleteEmailAsync(string blobPath, [Inject] JobQueueService? jobService = null)
+        {
+            await jobService!.DeleteAsync(blobPath);
+            return "ok";
         }
 
         public Task<JobResponse> SendEmailAsync(DomainJob job)

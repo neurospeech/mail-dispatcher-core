@@ -28,5 +28,6 @@ namespace MailDispatcher.Storage
         [JsonIgnore]
         public JobResponse[] Responses { get; set; }
         public string RowKey { get; set; }
+        public string BlobPath { get; set; }
     }
 }

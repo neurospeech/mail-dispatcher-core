@@ -33,6 +33,11 @@ namespace MailDispatcher.Storage
             this.blobs.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
         }
 
+        public Task DeleteAsync(string id)
+        {
+            return blobs.GetBlobClient(id).DeleteIfExistsAsync();
+        }
+
         public async Task<string> Queue(
             string accountId,
             string from,
@@ -41,14 +46,15 @@ namespace MailDispatcher.Storage
         {
 
             var id = $"{Guid.NewGuid().ToHexString()}-{DateTime.UtcNow.Ticks}";
-
-            var blob = blobs.GetBlobClient(id + ".eml");
+            string blobPath = id + ".eml";
+            var blob = blobs.GetBlobClient(blobPath);
 
             await blob.UploadAsync(file);
 
             var job = new Job { 
                 AccountID = accountId,
                 From = from,
+                BlobPath = blobPath,
                 Recipients = string.Join(",", recipients),
                 MessageBodyUrl = blob.Uri.ToString()
             };
