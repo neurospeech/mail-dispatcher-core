@@ -72,7 +72,7 @@ namespace MailDispatcher.Services.Receiver
 
                     ms.Seek(0, SeekOrigin.Begin);
 
-                    await bounceService.SendAsync(transaction.To.First().User, ms);
+                    await bounceService.SendAsync(transaction.To.First(), ms);
 
                     return SmtpResponse.Ok;
                 }

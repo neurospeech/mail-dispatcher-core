@@ -45,7 +45,11 @@ namespace MailDispatcher.Services.Jobs
                     });
 
                     // send bounce notice...
-                    var n = await SendBounceNoticeAsync(input, postBody);
+                    var n = await context.CreateSubOrchestrationInstance<Notification[]>(
+                        typeof(BounceWorkflow), new BounceNotification { 
+                            AccountID = input.Job.AccountID,
+                            Error = postBody
+                        });
 
                     return new JobResponse
                     {
@@ -63,21 +67,6 @@ namespace MailDispatcher.Services.Jobs
                 Domain = input.Domain,
                 Error = sb.ToString()
             };
-        }
-
-        [Activity]
-        public async virtual Task<Notification[]> SendBounceNoticeAsync(
-            DomainJob input, 
-            string error,
-            [Inject] AccountService accountService = null,
-            [Inject] SmtpService smtpService = null)
-        {
-            var acc = await accountService.GetAsync(input.Job.AccountID);
-
-            if (string.IsNullOrWhiteSpace(acc.BounceTriggers))
-                return null;
-
-            return await smtpService.NotifyAsync(acc.BounceTriggers, error, input);
         }
 
         [Activity]

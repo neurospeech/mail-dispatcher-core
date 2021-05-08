@@ -1,11 +1,13 @@
 ﻿using Azure.Storage.Blobs;
-using Azure.Storage.Queues;
+using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using SmtpServer.Mail;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Services
@@ -13,25 +15,48 @@ namespace MailDispatcher.Services
     [DIRegister(ServiceLifetime.Singleton)]
     public class BounceService
     {
-        private readonly JobRepository jobs;
         private readonly BlobContainerClient bounced;
-        private readonly QueueClient bounces;
+        private readonly WorkflowService workflowService;
 
         public BounceService(
-            JobRepository jobs,
-            AzureStorage storge
+            AzureStorage storge,
+            WorkflowService workflowService
             )
         {
-            this.jobs = jobs;
             this.bounced = storge.BlobServiceClient.GetBlobContainerClient("bounced");
-            this.bounces = storge.QueueClientService.GetQueueClient("bounces");
-            this.bounces.CreateIfNotExists();
+            this.bounced.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+            this.workflowService = workflowService;
         }
 
-        internal async Task SendAsync(string id, MemoryStream ms)
+        internal async Task SendAsync(
+            IMailbox address,
+            MemoryStream ms)
         {
+            string user = address.User;
+            string domain = address.Host;
+
+            var tokens = user.Split('-');
+            string accountId = tokens[0];
+            string id = tokens[1];
+            
             var blob = bounced.GetBlobClient(id + ".eml");
             await blob.UploadAsync(ms);
+
+            var postBody = JsonSerializer.Serialize(new
+            {
+                domain = domain,
+                addresses = new string[] { address.ToString() },
+                id = id,
+                code = "Unknown",
+                error = blob.Uri.ToString()
+            });
+
+            await workflowService.QueueTask<BounceWorkflow>(new BounceNotification
+            {
+                AccountID = accountId,
+                Error = postBody
+            });
+
         }
     }
 }

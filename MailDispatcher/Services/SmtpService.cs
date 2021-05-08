@@ -19,11 +19,6 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services
 {
 
-    public class SmtpResponse
-    {
-        public bool Sent { get; set; }
-    }
-
     [DIRegister(ServiceLifetime.Singleton)]
     public class SmtpService
     {
@@ -66,7 +61,7 @@ namespace MailDispatcher.Services
                     var now = DateTimeOffset.UtcNow;
                     msg.Date = now;
                     msg.MessageId = $"{message.RowKey}@{localHost}";
-                    msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{message.RowKey}@{localHost}");
+                    msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{account.ID}-{message.RowKey}@{localHost}");
                     if(!msg.ReplyTo.Any())
                     {
                         msg.ReplyTo.Add(msg.From.First());
@@ -99,35 +94,24 @@ namespace MailDispatcher.Services
             }
         }
 
-        internal async Task<Notification[]> NotifyAsync(string bounceTriggers, string postBody, DomainJob job)
+        internal async Task<Notification> NotifyAsync(string url, string postBody)
         {
             var postContent = new StringContent(postBody, System.Text.Encoding.UTF8, "application/json");
-
-
-            return await Task.WhenAll(bounceTriggers.Split('\n')
-                .Select(x => x.Trim())
-                .Select(x => SendNotification(x, postContent))
-                .ToList());
-
-
-            async Task<Notification> SendNotification(string url, StringContent postBody)
+            var body = new HttpRequestMessage(HttpMethod.Post, url);
+            body.Content = postContent;
+            using (var s = await httpClient.SendAsync(body, HttpCompletionOption.ResponseHeadersRead))
             {
-                var body = new HttpRequestMessage(HttpMethod.Post, url);
-                body.Content = postBody;
-                using (var s = await httpClient.SendAsync(body, HttpCompletionOption.ResponseHeadersRead))
-                {
-                    if (s.IsSuccessStatusCode)
-                        return new Notification { 
-                            Url = url, 
-                            Sent = DateTime.UtcNow 
-                        };
-                    var error = await s.Content.ReadAsStringAsync();
+                if (s.IsSuccessStatusCode)
                     return new Notification { 
-                        Url = url,
-                        Sent = DateTime.UtcNow,
-                        Error = error.Length > 1024 ? error.Substring(0, 1024) : error
+                        Url = url, 
+                        Sent = DateTime.UtcNow 
                     };
-                }
+                var error = await s.Content.ReadAsStringAsync();
+                return new Notification { 
+                    Url = url,
+                    Sent = DateTime.UtcNow,
+                    Error = error.Length > 1024 ? error.Substring(0, 1024) : error
+                };
             }
         }
 

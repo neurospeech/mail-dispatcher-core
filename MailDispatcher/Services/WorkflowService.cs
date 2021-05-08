@@ -52,6 +52,16 @@ namespace MailDispatcher.Services
             await client.RaiseEventAsync(state.OrchestrationInstance, name, data);
         }
 
+        internal async Task<string> GetAsync(string f)
+        {
+            try
+            {
+                return (await client.GetOrchestrationStateAsync(f)).OrchestrationInstance.InstanceId;
+            } catch
+            {
+                return null;
+            }
+        }
 
         public async Task RunAsync()
         {

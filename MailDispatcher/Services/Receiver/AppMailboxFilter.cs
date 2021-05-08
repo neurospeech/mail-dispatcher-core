@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using SmtpServer;
 using SmtpServer.Mail;
 using SmtpServer.Storage;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,17 +19,17 @@ namespace MailDispatcher.Services.Receiver
 
         private static readonly Task<MailboxFilterResult> SizeLimitExceeded = Task.FromResult(MailboxFilterResult.SizeLimitExceeded);
         private ILogger<SmtpReceiver> logger;
+        private readonly WorkflowService workflowService;
         private readonly string host;
-        private readonly JobRepository jobs;
 
         public AppMailboxFilter(
             ILogger<SmtpReceiver> logger, 
             SmtpConfig config,
-            JobRepository jobs)
+            WorkflowService workflowService)
         {
             this.logger = logger;
+            this.workflowService = workflowService;
             this.host = config.Host;
-            this.jobs = jobs;
         }
 
         public Task<MailboxFilterResult> CanAcceptFromAsync(ISessionContext context, IMailbox from, int size, CancellationToken cancellationToken)
@@ -49,8 +50,8 @@ namespace MailDispatcher.Services.Receiver
                 return MailboxFilterResult.NoTemporarily;
             }
 
-            string f = to.User;
-            var item = await jobs.GetAsync(f);
+            string f = to.User.Split('-').Last();
+            var item = await workflowService.GetAsync(f);
             if (item == null)
                 return MailboxFilterResult.NoTemporarily;
             return MailboxFilterResult.Yes;
