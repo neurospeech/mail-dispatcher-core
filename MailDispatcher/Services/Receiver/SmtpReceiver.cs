@@ -20,21 +20,26 @@ namespace MailDispatcher.Services.Receiver
         private readonly AppMessageStore messageStore;
         private readonly AppMailboxFilter mailboxFilter;
         private readonly AppUserAuthenticator userAuthenticator;
+        private readonly WorkflowService workflowService;
 
         public SmtpReceiver(
             ILogger<SmtpReceiver> logger,
             AppMessageStore messageStore,
             AppMailboxFilter mailboxFilter,
-            AppUserAuthenticator userAuthenticator)
+            AppUserAuthenticator userAuthenticator,
+            WorkflowService workflowService)
         {
             _logger = logger;
             this.messageStore = messageStore;
             this.mailboxFilter = mailboxFilter;
             this.userAuthenticator = userAuthenticator;
+            this.workflowService = workflowService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await workflowService.RunAsync();
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -59,6 +64,8 @@ namespace MailDispatcher.Services.Receiver
                     break;
                 }
             }
+
+            await workflowService.StopAsync();
         }
         X509Certificate CreateX509Certificate2()
         {
