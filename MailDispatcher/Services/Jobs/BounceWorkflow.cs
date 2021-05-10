@@ -15,7 +15,7 @@ namespace MailDispatcher.Services.Jobs
     }
 
     [Workflow]
-    public class BounceWorkflow : Workflow<BounceNotification, Notification[]?>
+    public class BounceWorkflow : Workflow<BounceWorkflow, BounceNotification, Notification[]?>
     {
         public override async Task<Notification[]?> RunTask(BounceNotification input)
         {

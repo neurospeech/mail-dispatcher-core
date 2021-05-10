@@ -51,7 +51,7 @@ namespace MailDispatcher.Services.Jobs
 
 
     [Workflow]
-    public class SendEmailWorkflow : Workflow<Job, JobResponse[]>
+    public class SendEmailWorkflow : Workflow<SendEmailWorkflow, Job, JobResponse[]>
     {
         public async override Task<JobResponse[]> RunTask(Job job)
         {
@@ -95,7 +95,7 @@ namespace MailDispatcher.Services.Jobs
                         error
                     });
 
-                    var n = await this.InvokeWorkflow<Notification[]>(typeof(BounceWorkflow), new BounceNotification { 
+                    var n = await BounceWorkflow.RunInAsync(this, new BounceNotification { 
                         AccountID = input.Job.AccountID,
                         Error = postBody
                     });

@@ -11,11 +11,10 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services
 {
     [DIRegister(ServiceLifetime.Singleton)]
-    public class WorkflowService
+    public class WorkflowService: BaseWorkflowService
     {
         private readonly AzureStorageOrchestrationService service;
 
-        private readonly TaskHubClient client;
         private readonly TaskHubWorker worker;
         private readonly Task initAsync;
 
