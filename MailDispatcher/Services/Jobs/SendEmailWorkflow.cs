@@ -95,9 +95,10 @@ namespace MailDispatcher.Services.Jobs
                         error
                     });
 
-                    var urls = await GetUrlsAsync(input.Job.AccountID);
-
-                    var n = await urls.WhenAll(x => NotifyAsync(postBody, x));
+                    var n = await this.InvokeWorkflow<Notification[]>(typeof(BounceWorkflow), new BounceNotification { 
+                        AccountID = input.Job.AccountID,
+                        Error = postBody
+                    });
 
                     return new JobResponse
                     {
@@ -115,30 +116,6 @@ namespace MailDispatcher.Services.Jobs
                 Domain = input.Domain,
                 Error = sb.ToString()
             };
-        }
-
-        [Activity]
-        public async Task<string[]> GetUrlsAsync(string accountID,
-            [Inject] AccountService? accountService = null)
-        {
-            var acc = await accountService!.GetAsync(accountID);
-            if (acc.BounceTriggers == null)
-                return new string[] { };
-
-            return acc.BounceTriggers
-                .Split('\n')
-                .Select(x => x.Trim())
-                .Where(x => x.Length > 0)
-                .ToArray();
-        }
-
-        [Activity]
-        public Task<Notification> NotifyAsync(
-            string error,
-            string url,
-            [Inject] SmtpService? smtpService = null)
-        {
-            return smtpService!.NotifyAsync(url, error);
         }
 
 
