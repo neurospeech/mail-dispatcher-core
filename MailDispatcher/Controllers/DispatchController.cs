@@ -1,4 +1,5 @@
 ﻿using MailDispatcher.Core.Auth;
+using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Mvc;
 using MimeKit;
@@ -56,12 +57,7 @@ namespace MailDispatcher.Controllers
                 return BadRequest("From is missing");
             if (model.Recipients == null)
                 return BadRequest("Recipient is missing");
-            var recipients =
-                    model.Recipients
-                        .Split(',')
-                        .Select(x => x.Trim())
-                        .Where(x => x.Length > 0);
-            var r = await jobs.Queue(id, model.From, recipients, file.OpenReadStream());
+            var r = await jobs.Queue(id, model.From, EmailAddress.ParseList(model.Recipients), file.OpenReadStream());
             return Ok(new { 
                 id = r
             });

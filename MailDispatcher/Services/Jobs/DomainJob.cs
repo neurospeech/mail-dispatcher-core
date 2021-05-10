@@ -8,18 +8,18 @@ namespace MailDispatcher.Services.Jobs
     {
         public Job Job { get; set; }
         public string Domain { get; set; }
-        public List<string> Addresses { get; set; }
+        public List<EmailAddress> Addresses { get; set; }
 
         public DomainJob()
         {
 
         }
 
-        public DomainJob(Job job, IGrouping<string, (string domain, string address)> addresses)
+        public DomainJob(Job job, IGrouping<string, EmailAddress> addresses)
         {
             this.Job = job;
             this.Domain = addresses.Key ;
-            this.Addresses = addresses.Select(x => x.address).ToList();
+            this.Addresses = addresses.ToList();
         }
     }
 }

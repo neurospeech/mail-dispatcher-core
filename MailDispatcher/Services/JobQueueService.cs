@@ -41,9 +41,11 @@ namespace MailDispatcher.Storage
         public async Task<string> Queue(
             string accountId,
             string from,
-            IEnumerable<string> recipients,
+            EmailAddress[] recipients,
             Stream file)
         {
+
+            // verify...
 
             var id = $"{Guid.NewGuid().ToHexString()}-{DateTime.UtcNow.Ticks}";
             string blobPath = id + ".eml";
@@ -55,7 +57,7 @@ namespace MailDispatcher.Storage
                 AccountID = accountId,
                 From = from,
                 BlobPath = blobPath,
-                Recipients = string.Join(",", recipients),
+                Recipients = recipients,
                 MessageBodyUrl = blob.Uri.ToString()
             };
 

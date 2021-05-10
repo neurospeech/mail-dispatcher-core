@@ -75,7 +75,9 @@ namespace MailDispatcher.Services
                         HeaderId.MimeVersion,
                         HeaderId.ContentType
                     });
-                    await client.SendAsync(msg, MailboxAddress.Parse(message.From), addresses.Select(x => MailboxAddress.Parse(x)), token);
+                    await client.SendAsync(msg, 
+                        MailboxAddress.Parse(message.From), 
+                        addresses.Select(x => MailboxAddress.Parse(x.ToString())), token);
                     return (true, null, null);
                 } catch (SmtpCommandException ex) {
                     switch(ex.ErrorCode)

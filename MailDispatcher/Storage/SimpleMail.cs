@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using MailDispatcher.Services.Jobs;
 using Microsoft.AspNetCore.Http;
 using MimeKit;
 using System.Collections.Generic;
@@ -29,7 +30,7 @@ namespace MailDispatcher.Storage
 
         public string? UnsubscribeLink { get; set; }
 
-        public (Stream stream, List<string> recipients) ToMessage(IFormFileCollection? files)
+        public (Stream stream, EmailAddress[] recipients) ToMessage(IFormFileCollection? files)
         {
             if (From == null)
                 throw new ValidationException("Need from");
@@ -41,8 +42,8 @@ namespace MailDispatcher.Storage
 
             MimeMessage msg = new MimeMessage();
             msg.From.Add(MailboxAddress.Parse(From));
-            List<string> recipients
-                = new List<string>(
+            List<EmailAddress> recipients
+                = new List<EmailAddress>(
                     (To?.Length ?? 0) +
                     (Cc?.Length ?? 0) +
                     (Bcc?.Length ?? 0));
@@ -84,15 +85,15 @@ namespace MailDispatcher.Storage
             var ms = new MemoryStream();
             msg.WriteTo(ms);
             ms.Seek(0, SeekOrigin.Begin);
-            return (ms, recipients);
+            return (ms, recipients.ToArray());
 
-            static void AddRecipients(string[]? list, InternetAddressList? addressList, List<string> recipients)
+            static void AddRecipients(string[]? list, InternetAddressList? addressList, List<EmailAddress> recipients)
             {
                 if (list == null)
                     return;
                 foreach(var r in list)
                 {
-                    recipients.Add(r);
+                    recipients.Add((EmailAddress)r);
                     addressList?.Add(MailboxAddress.Parse(r));
                 }
             }
