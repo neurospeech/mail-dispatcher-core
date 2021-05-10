@@ -11,14 +11,6 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services.Jobs
 {
 
-    public class Notification
-    {
-        public string? Url { get; set; }
-        public string? Error { get; set; }
-
-        public DateTime Sent { get; set; }
-    }
-
     public class EmailAddress
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -64,18 +56,14 @@ namespace MailDispatcher.Services.Jobs
         public async override Task<JobResponse[]> RunTask(Job job)
         {
             job.RowKey = context!.OrchestrationInstance.InstanceId;
-            var rlist = job.Recipients
+            var r = await job.Recipients
                 .GroupBy(x => x.Domain)
                 .Select(x => new DomainJob(job, x))
-                .Select(SendEmailAsync)
-                .ToList();
-
-            var r = await Task.WhenAll(rlist);
+                .WhenAll(SendEmailAsync);
 
             await DeleteEmailAsync(job.BlobPath);
 
             return r;
-
         }
 
 
@@ -107,13 +95,9 @@ namespace MailDispatcher.Services.Jobs
                         error
                     });
 
-                    // send bounce notice...
-                    var n = await context!.CreateSubOrchestrationInstance<Notification[]>(
-                        typeof(BounceWorkflow), new BounceNotification
-                        {
-                            AccountID = input.Job.AccountID,
-                            Error = postBody
-                        });
+                    var urls = await GetUrlsAsync(input.Job.AccountID);
+
+                    var n = await urls.WhenAll(x => NotifyAsync(postBody, x));
 
                     return new JobResponse
                     {
@@ -132,6 +116,31 @@ namespace MailDispatcher.Services.Jobs
                 Error = sb.ToString()
             };
         }
+
+        [Activity]
+        public async Task<string[]> GetUrlsAsync(string accountID,
+            [Inject] AccountService? accountService = null)
+        {
+            var acc = await accountService!.GetAsync(accountID);
+            if (acc.BounceTriggers == null)
+                return new string[] { };
+
+            return acc.BounceTriggers
+                .Split('\n')
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .ToArray();
+        }
+
+        [Activity]
+        public Task<Notification> NotifyAsync(
+            string error,
+            string url,
+            [Inject] SmtpService? smtpService = null)
+        {
+            return smtpService!.NotifyAsync(url, error);
+        }
+
 
         [Activity]
         public virtual Task<(bool sent, string code, string error)> SendEmailAsync(
