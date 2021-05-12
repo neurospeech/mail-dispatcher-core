@@ -34,7 +34,7 @@ namespace MailDispatcher.Services.Jobs
         }
 
         [Activity]
-        public async Task<string[]> GetUrlsAsync(string accountID, 
+        public virtual async Task<string[]> GetUrlsAsync(string accountID, 
             [Inject] AccountService? accountService = null)
         {
             var acc = await accountService!.GetAsync(accountID);
@@ -49,7 +49,7 @@ namespace MailDispatcher.Services.Jobs
         }
 
         [Activity]
-        public Task<Notification> NotifyAsync(
+        public virtual Task<Notification> NotifyAsync(
             string error, 
             string url,
             [Inject] SmtpService? smtpService = null)
