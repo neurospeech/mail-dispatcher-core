@@ -83,6 +83,7 @@ namespace MailDispatcher.Controllers
                     user = await accountRepository.SaveAsync(new Account
                     {
                         ID = "admin",
+                        Active = true,
                         Password = hashService.Hash("admin", "mail-dispatcher")
                     });
                 }
