@@ -41,7 +41,13 @@ namespace MailDispatcher.Services
         {
             await initAsync;
             var lastWeek = DateTime.UtcNow.AddDays(-7);
-            await client.PurgeOrchestrationInstanceHistoryAsync(lastWeek, OrchestrationStateTimeRangeFilterType.OrchestrationLastUpdatedTimeFilter);
+            var start = lastWeek.AddDays(-7);
+            await service.PurgeInstanceHistoryAsync(start, lastWeek, new OrchestrationStatus[] { 
+                OrchestrationStatus.Failed,
+                OrchestrationStatus.Completed,
+                OrchestrationStatus.Canceled,
+                OrchestrationStatus.Terminated,
+            });
         }
 
         public async Task<string> QueueTask<T>(object input = null)
