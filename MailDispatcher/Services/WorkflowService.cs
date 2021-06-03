@@ -41,7 +41,7 @@ namespace MailDispatcher.Services
         {
             await initAsync;
             var lastWeek = DateTime.UtcNow.AddDays(-7);
-            var start = lastWeek.AddDays(-7);
+            var start = new DateTime(2010,1,1);
             await service.PurgeInstanceHistoryAsync(start, lastWeek, new OrchestrationStatus[] { 
                 OrchestrationStatus.Failed,
                 OrchestrationStatus.Completed,
