@@ -6,6 +6,7 @@ using NeuroSpeech.Workflows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Services
@@ -36,7 +37,12 @@ namespace MailDispatcher.Services
             this.initAsync = service.CreateIfNotExistsAsync();
         }
 
-
+        internal async Task CleanupAsync(CancellationToken stoppingToken)
+        {
+            await initAsync;
+            var lastWeek = DateTime.UtcNow.AddDays(-7);
+            await client.PurgeOrchestrationInstanceHistoryAsync(lastWeek, OrchestrationStateTimeRangeFilterType.OrchestrationCompletedTimeFilter);
+        }
 
         public async Task<string> QueueTask<T>(object input = null)
         {
@@ -65,9 +71,6 @@ namespace MailDispatcher.Services
         public async Task RunAsync()
         {
             await initAsync;
-            // var lastWeek = DateTime.UtcNow.AddDays(-7);
-            // await client.PurgeOrchestrationInstanceHistoryAsync(lastWeek, OrchestrationStateTimeRangeFilterType.OrchestrationCompletedTimeFilter);
-
             await worker.StartAsync();
         }
 
