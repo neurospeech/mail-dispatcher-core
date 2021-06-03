@@ -65,8 +65,8 @@ namespace MailDispatcher.Services
         public async Task RunAsync()
         {
             await initAsync;
-            var lastWeek = DateTime.UtcNow.AddDays(-7);
-            await client.PurgeOrchestrationInstanceHistoryAsync(lastWeek, OrchestrationStateTimeRangeFilterType.OrchestrationCompletedTimeFilter);
+            // var lastWeek = DateTime.UtcNow.AddDays(-7);
+            // await client.PurgeOrchestrationInstanceHistoryAsync(lastWeek, OrchestrationStateTimeRangeFilterType.OrchestrationCompletedTimeFilter);
 
             await worker.StartAsync();
         }
