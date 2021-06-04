@@ -134,6 +134,7 @@ namespace MailDispatcher.Services
             var client = new SmtpClient();
             client.LocalDomain = localHost;
             client.Timeout = 15000;
+            client.CheckCertificateRevocation = false;
             client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             var mxes = await lookupService.LookupMXAsync(domain);
 
