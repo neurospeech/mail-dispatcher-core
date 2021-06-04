@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Authentication;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -135,6 +136,7 @@ namespace MailDispatcher.Services
             client.LocalDomain = localHost;
             client.Timeout = 15000;
             client.CheckCertificateRevocation = false;
+            client.SslProtocols = SslProtocols.Ssl3 | SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
             client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             var mxes = await lookupService.LookupMXAsync(domain);
 
@@ -150,7 +152,7 @@ namespace MailDispatcher.Services
             {
                 try
                 {
-                    await client.ConnectAsync(mx, 25);
+                    await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 25 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
@@ -161,7 +163,7 @@ namespace MailDispatcher.Services
 
                 try
                 {
-                    await client.ConnectAsync(mx, 587);
+                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 587 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
@@ -172,7 +174,7 @@ namespace MailDispatcher.Services
 
                 try
                 {
-                    await client.ConnectAsync(mx, 465);
+                    await client.ConnectAsync(mx, 465, true);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 465 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
