@@ -28,7 +28,7 @@ namespace MailDispatcher.Controllers
             var a = await accountRepository.GetAsync(id);
             if (a.AuthKey != auth)
                 return Unauthorized();
-            var (ms, recipients) = model.ToMessage(Request.Form.Files);
+            var (ms, recipients) = model.ToMessage( Request.HasFormContentType ? Request.Form.Files : null);
             var r = await jobs.Queue(id, model.From, recipients, ms);
             return Ok(new
             {
