@@ -3,6 +3,7 @@ using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using MailKit.Net.Smtp;
 using Microsoft.ApplicationInsights;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MimeKit;
@@ -26,18 +27,21 @@ namespace MailDispatcher.Services
         private readonly DnsLookupService lookupService;
         private readonly TelemetryClient telemetryClient;
         private readonly AccountService accountService;
+        private readonly MemoryCache cache;
         private readonly string localHost;
 
         public SmtpService(
             DnsLookupService lookupService, 
             TelemetryClient telemetryClient,
             SmtpConfig smtpConfig,
-            AccountService accountService)
+            AccountService accountService,
+            MemoryCache cache)
         {
             this.httpClient = new HttpClient();
             this.lookupService = lookupService;
             this.telemetryClient = telemetryClient;
             this.accountService = accountService;
+            this.cache = cache;
             this.localHost = smtpConfig.Host;
         }
 
@@ -119,18 +123,34 @@ namespace MailDispatcher.Services
             }
         }
 
+        public class HostPort
+        {
+            public string Host { get; set; }
+            public int Port { get; set; }
+        }
+
         internal async Task<(SmtpClient smtpClient, string error)> NewClient(string domain)
         {
             var client = new SmtpClient();
             client.LocalDomain = localHost;
+            client.Timeout = 15000;
             client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             var mxes = await lookupService.LookupMXAsync(domain);
+
+            var mxKey = $"Smtp-MX:{domain}";
+
+            if(cache.TryGetValue<HostPort>(mxKey, out var hp))
+            {
+                await client.ConnectAsync(hp.Host, hp.Port);
+                return (client, null);
+            }
 
             foreach (var mx in mxes)
             {
                 try
                 {
                     await client.ConnectAsync(mx, 25);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 25 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
                 catch (Exception ex)
@@ -140,7 +160,8 @@ namespace MailDispatcher.Services
 
                 try
                 {
-                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.Auto);
+                    await client.ConnectAsync(mx, 587);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 587 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
                 catch (Exception ex)
@@ -150,7 +171,8 @@ namespace MailDispatcher.Services
 
                 try
                 {
-                    await client.ConnectAsync(mx, 587, true);
+                    await client.ConnectAsync(mx, 465);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 465 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
                 catch (Exception ex)
