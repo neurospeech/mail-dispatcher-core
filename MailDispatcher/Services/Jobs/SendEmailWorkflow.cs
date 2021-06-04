@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using DurableTask.Core;
 using MailDispatcher.Storage;
+using Microsoft.ApplicationInsights;
 using NeuroSpeech.Workflows;
 using System;
 using System.Linq;
@@ -120,12 +121,20 @@ namespace MailDispatcher.Services.Jobs
 
 
         [Activity]
-        public virtual Task<(bool sent, string code, string error)> SendEmailAsync(
+        public virtual async Task<(bool sent, string code, string error)> SendEmailAsync(
             DomainJob input,
             int i,
-            [Inject] SmtpService? smtpService = null)
+            [Inject] SmtpService smtpService = null!,
+            [Inject] TelemetryClient telemetryClient = null!)
         {
-            return smtpService!.SendAsync(input);
+            var start = DateTimeOffset.UtcNow;
+            var r = await smtpService.SendAsync(input);
+            if(r.sent && r.error == null)
+            {
+                var end = DateTimeOffset.UtcNow - start;
+                telemetryClient.TrackRequest("MailSent", start, end, "200", true);
+            }
+            return r;
         }
 
         [Activity]

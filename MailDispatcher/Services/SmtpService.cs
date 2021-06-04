@@ -80,6 +80,7 @@ namespace MailDispatcher.Services
                         addresses.Select(x => MailboxAddress.Parse(x.ToString())), token);
                     return (true, null, null);
                 } catch (SmtpCommandException ex) {
+                    telemetryClient.TrackException(ex);
                     switch(ex.ErrorCode)
                     {
                         case SmtpErrorCode.MessageNotAccepted:
@@ -90,6 +91,7 @@ namespace MailDispatcher.Services
                     return (true, ex.StatusCode.ToString(), ex.ToString());
                 } catch (Exception ex)
                 {
+                    telemetryClient.TrackException(ex);
                     return (true, "Unknown", ex.ToString());
                 }
 
