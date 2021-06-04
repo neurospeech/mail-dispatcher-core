@@ -140,7 +140,7 @@ namespace MailDispatcher.Services
 
                 try
                 {
-                    await client.ConnectAsync(mx, 587, true);
+                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.Auto);
                     return (client, null);
                 }
                 catch (Exception ex)
@@ -148,6 +148,15 @@ namespace MailDispatcher.Services
                     telemetryClient.TrackException(ex);
                 }
 
+                try
+                {
+                    await client.ConnectAsync(mx, 587, true);
+                    return (client, null);
+                }
+                catch (Exception ex)
+                {
+                    telemetryClient.TrackException(ex);
+                }
             }
 
             return (null, $"Could not connect to any MX host on {domain}");
