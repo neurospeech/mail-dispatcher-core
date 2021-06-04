@@ -57,10 +57,14 @@ namespace MailDispatcher.Services.Jobs
         public async override Task<JobResponse[]> RunTask(Job job)
         {
             job.RowKey = context!.OrchestrationInstance.InstanceId;
-            var r = await job.Recipients
+            var list = job.Recipients
                 .GroupBy(x => x.Domain)
-                .Select(x => new DomainJob(job, x))
-                .WhenAll(SendEmailAsync);
+                .Select(x => new DomainJob(job, x));
+
+            foreach(var d in list)
+            {
+                await SendEmailAsync(d);
+            }
 
             await DeleteEmailAsync(job.BlobPath);
 
@@ -111,6 +115,8 @@ namespace MailDispatcher.Services.Jobs
                 }
                 sb.AppendLine(code);
                 sb.AppendLine(error);
+
+                await Delay(TimeSpan.FromMinutes(15));
             }
             return new JobResponse
             {
