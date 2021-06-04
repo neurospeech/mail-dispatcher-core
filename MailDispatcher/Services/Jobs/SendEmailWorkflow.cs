@@ -4,6 +4,7 @@ using MailDispatcher.Storage;
 using Microsoft.ApplicationInsights;
 using NeuroSpeech.Workflows;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -61,14 +62,15 @@ namespace MailDispatcher.Services.Jobs
                 .GroupBy(x => x.Domain)
                 .Select(x => new DomainJob(job, x));
 
+            var r = new List<JobResponse>();
             foreach(var d in list)
             {
-                await SendEmailAsync(d);
+                r.Add(await SendEmailAsync(d));
             }
 
             await DeleteEmailAsync(job.BlobPath);
 
-            return r;
+            return r.ToArray();
         }
 
 
