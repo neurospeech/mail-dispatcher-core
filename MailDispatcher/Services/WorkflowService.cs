@@ -26,8 +26,8 @@ namespace MailDispatcher.Services
             {
                 StorageConnectionString = storage.ConnectionString,
                 TaskHubName = "mailq1",
-                MaxConcurrentTaskActivityWorkItems = 1000,
-                MaxConcurrentTaskOrchestrationWorkItems = 400
+                MaxConcurrentTaskActivityWorkItems = 400,
+                MaxConcurrentTaskOrchestrationWorkItems = 200
             };
 
             this.service = new DurableTask.AzureStorage.AzureStorageOrchestrationService(settings);
