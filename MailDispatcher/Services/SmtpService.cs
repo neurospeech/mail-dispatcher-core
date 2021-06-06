@@ -28,7 +28,7 @@ namespace MailDispatcher.Services
         private readonly DnsLookupService lookupService;
         private readonly TelemetryClient telemetryClient;
         private readonly AccountService accountService;
-        private readonly MemoryCache cache;
+        private readonly IMemoryCache cache;
         private readonly string localHost;
 
         public SmtpService(
@@ -36,7 +36,7 @@ namespace MailDispatcher.Services
             TelemetryClient telemetryClient,
             SmtpConfig smtpConfig,
             AccountService accountService,
-            MemoryCache cache)
+            IMemoryCache cache)
         {
             this.httpClient = new HttpClient();
             this.lookupService = lookupService;
