@@ -152,17 +152,6 @@ namespace MailDispatcher.Services
             {
                 try
                 {
-                    await client.ConnectAsync(mx, 465, true);
-                    cache.Set(mxKey, new HostPort { Host = mx, Port = 465 }, TimeSpan.FromHours(5));
-                    return (client, null);
-                }
-                catch (Exception ex)
-                {
-                    telemetryClient.TrackException(ex);
-                }
-
-                try
-                {
                     await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 25 }, TimeSpan.FromHours(5));
                     return (client, null);
@@ -176,6 +165,17 @@ namespace MailDispatcher.Services
                 {
                     await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 587 }, TimeSpan.FromHours(5));
+                    return (client, null);
+                }
+                catch (Exception ex)
+                {
+                    telemetryClient.TrackException(ex);
+                }
+
+                try
+                {
+                    await client.ConnectAsync(mx, 465, true);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 465 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
                 catch (Exception ex)
