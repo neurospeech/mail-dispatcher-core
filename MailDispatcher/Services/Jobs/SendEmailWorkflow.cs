@@ -60,7 +60,8 @@ namespace MailDispatcher.Services.Jobs
             job.RowKey = context!.OrchestrationInstance.InstanceId;
             var list = job.Recipients
                 .GroupBy(x => x.Domain)
-                .Select(x => new DomainJob(job, x));
+                .Select(x => new DomainJob(job, x))
+                .ToList();
 
             var r = new List<JobResponse>();
             foreach(var d in list)
