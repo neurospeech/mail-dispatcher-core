@@ -163,7 +163,7 @@ namespace MailDispatcher.Services
 
                 try
                 {
-                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
+                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.StartTls);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 587 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
