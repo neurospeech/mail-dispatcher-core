@@ -158,7 +158,7 @@ namespace MailDispatcher.Services
                 }
                 catch (Exception ex)
                 {
-                    telemetryClient.TrackException(ex);
+                    telemetryClient.TrackException(new Exception($"Unable to connect {domain} at {mx}:25\r\n{ex.Message}", ex));
                 }
 
                 try
@@ -169,7 +169,7 @@ namespace MailDispatcher.Services
                 }
                 catch (Exception ex)
                 {
-                    telemetryClient.TrackException(ex);
+                    telemetryClient.TrackException(new Exception($"Unable to connect {domain} at {mx}:587\r\n{ex.Message}", ex));
                 }
 
                 try
@@ -180,7 +180,7 @@ namespace MailDispatcher.Services
                 }
                 catch (Exception ex)
                 {
-                    telemetryClient.TrackException(ex);
+                    telemetryClient.TrackException(new Exception($"Unable to connect {domain} at {mx}:465\r\n{ex.Message}", ex));
                 }
 
             }
