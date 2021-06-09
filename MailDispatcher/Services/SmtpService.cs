@@ -152,7 +152,27 @@ namespace MailDispatcher.Services
             {
                 try
                 {
+                    await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 25 }, TimeSpan.FromHours(5));
+                    return (client, null);
+                }
+                catch (Exception ex)
+                {
+                    telemetryClient.TrackException(new Exception($"Unable to connect {domain} at {mx}:25\r\n{ex.Message}", ex));
+                }
+                try
+                {
                     await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.Auto);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 25 }, TimeSpan.FromHours(5));
+                    return (client, null);
+                }
+                catch (Exception ex)
+                {
+                    telemetryClient.TrackException(new Exception($"Unable to connect {domain} at {mx}:25\r\n{ex.Message}", ex));
+                }
+                try
+                {
+                    await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.None);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 25 }, TimeSpan.FromHours(5));
                     return (client, null);
                 }
