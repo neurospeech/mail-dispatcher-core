@@ -4,6 +4,7 @@ using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,10 @@ namespace MailDispatcher.Controllers
 
         }
 
+        /// <summary>
+        /// Logout
+        /// </summary>
+        /// <returns></returns>
         [HttpDelete]
         public async Task<IActionResult> Logout()
         {
@@ -33,6 +38,12 @@ namespace MailDispatcher.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Check if you are logged in
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="401">Unauthorized</response>
+        /// <response code="200">You are logged in</response>
         [HttpGet]
         public object Get()
         {
@@ -49,6 +60,13 @@ namespace MailDispatcher.Controllers
         }
 
 
+        /// <summary>
+        /// Change Password
+        /// </summary>
+        /// <param name="repository"></param>
+        /// <param name="hashService"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [HttpPost("password"), AuthorizeAdmin]
         public async Task<IActionResult> Post(
             [FromServices] AccountService repository,
@@ -67,11 +85,20 @@ namespace MailDispatcher.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Login
+        /// </summary>
+        /// <param name="accountRepository"></param>
+        /// <param name="hashService"></param>
+        /// <param name="configuration"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
 
         [HttpPut("login")]
         public async Task<object> Login(
             [FromServices] AccountService accountRepository,
             [FromServices] HashService hashService,
+            [FromServices] IConfiguration configuration,
             [FromBody] LoginModel model
             )
         {
@@ -80,11 +107,12 @@ namespace MailDispatcher.Controllers
             {
                 if (model.Username == "admin")
                 {
+                    string defaultPassword = configuration.GetValue<string>("mail-dispatcher");
                     user = await accountRepository.SaveAsync(new Account
                     {
                         ID = "admin",
                         Active = true,
-                        Password = hashService.Hash("admin", "mail-dispatcher")
+                        Password = hashService.Hash("admin", defaultPassword)
                     });
                 }
             }

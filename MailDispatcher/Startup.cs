@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Net.Http.Headers;
 using NeuroSpeech;
 using System;
@@ -88,6 +89,11 @@ namespace MailDispatcher
                     Title = "WebAtoms API",
                     Version = "v1"
                 });
+                var dir = new System.IO.DirectoryInfo(PlatformServices.Default.Application.ApplicationBasePath);
+                foreach (var file in dir.EnumerateFiles("*.xml"))
+                {
+                    c.IncludeXmlComments(file.FullName);
+                }
             });
         }
 
