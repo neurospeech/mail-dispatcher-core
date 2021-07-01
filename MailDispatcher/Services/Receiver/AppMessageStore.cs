@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,16 +22,19 @@ namespace MailDispatcher.Services.Receiver
     {
         private ILogger<SmtpReceiver> logger;
         private readonly BounceService bounceService;
+        private readonly JobQueueService jobs;
         DkimPublicKeyLocator publicKeyLocator;
         DkimVerifier verifier;
 
         public AppMessageStore(
             ILogger<SmtpReceiver> logger, 
             DnsLookupService dnsLookupService,
-            BounceService bounceService)
+            BounceService bounceService,
+            JobQueueService jobs)
         {
             this.logger = logger;
             this.bounceService = bounceService;
+            this.jobs = jobs;
             publicKeyLocator = new DkimPublicKeyLocator(dnsLookupService);
             verifier = new DkimVerifier(publicKeyLocator);
         }
@@ -47,6 +51,16 @@ namespace MailDispatcher.Services.Receiver
                 var textMessage = (ITextMessage)transaction.Message;
 
                 var message = await MimeMessage.LoadAsync(textMessage.Content, cancellationToken);
+
+                if(context.Authentication.IsAuthenticated)
+                {
+                    var user = context.Authentication.User;
+                    await jobs.Queue(user, 
+                        transaction.From.ToEmailAddress(),
+                        transaction.To.Select(x => (EmailAddress)x.ToEmailAddress()).ToArray(), textMessage.Content);
+                    return SmtpResponse.Ok;
+                }
+
 
                 var recipients = transaction.To.Select(x => x.ToEmailAddress()).ToList();
 
