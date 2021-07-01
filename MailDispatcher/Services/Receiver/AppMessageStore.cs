@@ -23,6 +23,7 @@ namespace MailDispatcher.Services.Receiver
         private ILogger<SmtpReceiver> logger;
         private readonly BounceService bounceService;
         private readonly JobQueueService jobs;
+        private readonly TempFileService tempFileService;
         DkimPublicKeyLocator publicKeyLocator;
         DkimVerifier verifier;
 
@@ -30,11 +31,13 @@ namespace MailDispatcher.Services.Receiver
             ILogger<SmtpReceiver> logger, 
             DnsLookupService dnsLookupService,
             BounceService bounceService,
-            JobQueueService jobs)
+            JobQueueService jobs,
+            TempFileService tempFileService)
         {
             this.logger = logger;
             this.bounceService = bounceService;
             this.jobs = jobs;
+            this.tempFileService = tempFileService;
             publicKeyLocator = new DkimPublicKeyLocator(dnsLookupService);
             verifier = new DkimVerifier(publicKeyLocator);
         }
@@ -50,18 +53,10 @@ namespace MailDispatcher.Services.Receiver
             {
                 var textMessage = (ITextMessage)transaction.Message;
 
-                var message = await MimeMessage.LoadAsync(textMessage.Content, cancellationToken);
-
-                if(context.Authentication.IsAuthenticated)
-                {
-                    var user = context.Authentication.User;
-                    await jobs.Queue(user, 
-                        transaction.From.ToEmailAddress(),
-                        transaction.To.Select(x => (EmailAddress)x.ToEmailAddress()).ToArray(), textMessage.Content);
-                    return SmtpResponse.Ok;
-                }
-
-
+                var stream = await tempFileService.Create(textMessage.Content);
+                stream.Seek(0, SeekOrigin.Begin);
+                var message = await MimeMessage.LoadAsync(stream, cancellationToken);
+                stream.Seek(0, SeekOrigin.Begin);
                 var recipients = transaction.To.Select(x => x.ToEmailAddress()).ToList();
 
 
@@ -79,17 +74,19 @@ namespace MailDispatcher.Services.Receiver
 
                 logger.LogTrace($"Storing at {all}");
 
-                using (var ms = new MemoryStream())
+                if (context.Authentication.IsAuthenticated)
                 {
-
-                    await message.WriteToAsync(ms, cancellationToken);
-
-                    ms.Seek(0, SeekOrigin.Begin);
-
-                    await bounceService.SendAsync(transaction.To.First(), ms);
-
+                    var user = context.Authentication.User;
+                    await jobs.Queue(user,
+                        transaction.From.ToEmailAddress(),
+                        transaction.To.Select(x => (EmailAddress)x.ToEmailAddress()).ToArray(), stream);
                     return SmtpResponse.Ok;
                 }
+
+
+
+                await bounceService.SendAsync(transaction.To.First(), stream);
+                return SmtpResponse.Ok;
 
             }
             catch (Exception ex)
