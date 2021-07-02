@@ -53,9 +53,19 @@ namespace MailDispatcher.Services.Receiver
             {
                 var textMessage = (ITextMessage)transaction.Message;
 
+                if (context.Authentication.IsAuthenticated)
+                {
+                    var user = context.Authentication.User;
+                    await jobs.Queue(user,
+                        transaction.From.ToEmailAddress(),
+                        transaction.To.Select(x => (EmailAddress)x.ToEmailAddress()).ToArray(), textMessage.Content);
+                    return SmtpResponse.Ok;
+                }
+
+
                 var stream = await tempFileService.Create(textMessage.Content);
                 stream.Seek(0, SeekOrigin.Begin);
-                var message = await MimeMessage.LoadAsync(stream, cancellationToken);
+                var message = await MimeMessage.LoadAsync(textMessage.Content, cancellationToken);
                 stream.Seek(0, SeekOrigin.Begin);
                 var recipients = transaction.To.Select(x => x.ToEmailAddress()).ToList();
 
@@ -73,16 +83,6 @@ namespace MailDispatcher.Services.Receiver
                 }
 
                 logger.LogTrace($"Storing at {all}");
-
-                if (context.Authentication.IsAuthenticated)
-                {
-                    var user = context.Authentication.User;
-                    await jobs.Queue(user,
-                        transaction.From.ToEmailAddress(),
-                        transaction.To.Select(x => (EmailAddress)x.ToEmailAddress()).ToArray(), stream);
-                    return SmtpResponse.Ok;
-                }
-
 
 
                 await bounceService.SendAsync(transaction.To.First(), stream);
