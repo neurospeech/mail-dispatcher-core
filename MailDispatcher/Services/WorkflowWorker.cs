@@ -23,6 +23,11 @@ namespace MailDispatcher.Services
                 try {
                     await workflowService.ProcessMessagesOnceAsync();
                 } catch
+                {}
+                try
+                {
+                    await Task.Delay(15000, workflowService.WaitToken);
+                }catch (TaskCanceledException)
                 {
 
                 }

@@ -61,7 +61,9 @@ namespace MailDispatcher.Storage
                 MessageBodyUrl = blob.Uri.ToString()
             };
 
-            return await SendEmailWorkflow.CreateAsync(workflowService, job);
+            var wid = await SendEmailWorkflow.CreateAsync(workflowService, job);
+            workflowService?.Trigger();
+            return wid;
         }
 
     }
