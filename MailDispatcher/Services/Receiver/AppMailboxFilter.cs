@@ -1,4 +1,5 @@
 ﻿using MailDispatcher.Config;
+using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -51,7 +52,7 @@ namespace MailDispatcher.Services.Receiver
             }
 
             string f = to.User.Split('-').Last();
-            var item = await workflowService.GetAsync(f);
+            var item = await SendEmailWorkflow.GetStatusAsync(workflowService, f);
             if (item == null)
                 return MailboxFilterResult.NoTemporarily;
             return MailboxFilterResult.Yes;

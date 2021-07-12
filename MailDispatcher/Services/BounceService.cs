@@ -30,7 +30,7 @@ namespace MailDispatcher.Services
 
         internal async Task SendAsync(
             IMailbox address,
-            MemoryStream ms)
+            Stream ms)
         {
             string user = address.User;
             string domain = address.Host;
