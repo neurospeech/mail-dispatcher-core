@@ -1,8 +1,7 @@
 ﻿#nullable enable
-using DurableTask.Core;
 using MailDispatcher.Storage;
 using Microsoft.ApplicationInsights;
-using NeuroSpeech.Workflows;
+using NeuroSpeech.Eternity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,51 +12,12 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services.Jobs
 {
 
-    public class EmailAddress
-    {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public string Domain { get; set; }
-        public string User { get; set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        public static explicit operator EmailAddress (string address)
-        {
-            var tokens = address.Trim().Split('@');
-            if (tokens.Length != 2)
-                throw new ArgumentException($"Invalid email address {address}");
-            return new EmailAddress
-            {
-                User = tokens[0],
-                Domain = tokens.Last()
-            };
-        }
-
-        public override string ToString()
-        {
-            return $"{User}@{Domain}";
-        }
-
-        private static char[] Separators = new char[] { ',',';' };
-
-        public static EmailAddress[] ParseList(string addresses)
-        {
-            var tokens = addresses.Split(Separators, StringSplitOptions.RemoveEmptyEntries);
-            var result = new EmailAddress[tokens.Length];
-            for (int i = 0; i < tokens.Length; i++)
-            {
-                result[i] = (EmailAddress)tokens[i];
-            }
-            return result;
-        }
-    }
-
-
-    [Workflow]
     public class SendEmailWorkflow : Workflow<SendEmailWorkflow, Job, JobResponse[]>
     {
-        public async override Task<JobResponse[]> RunTask(Job job)
+        public async override Task<JobResponse[]> RunAsync(Job job)
         {
-            job.RowKey = context!.OrchestrationInstance.InstanceId;
+            job.RowKey = this.ID;
             var list = job.Recipients
                 .GroupBy(x => x.Domain)
                 .Select(x => new DomainJob(job, x))
@@ -78,16 +38,17 @@ namespace MailDispatcher.Services.Jobs
         public async Task<JobResponse> SendEmailAsync(DomainJob input)
         {
             StringBuilder sb = new StringBuilder();
+            var after = TimeSpan.FromMilliseconds(1);
             for (int i = 0; i < 3; i++)
             {
-                var (sent, code, error) = await SendEmailAsync(input, i);
+                var (sent, code, error) = await SendEmailAsync(after, input, i);
                 if (sent)
                 {
                     if (error == null)
                     {
                         return new JobResponse
                         {
-                            Sent = context!.CurrentUtcDateTime,
+                            Sent = this.CurrentUtc.UtcDateTime,
                             Domain = input.Domain
                         };
                     }
@@ -103,7 +64,7 @@ namespace MailDispatcher.Services.Jobs
                         error
                     });
 
-                    var n = await BounceWorkflow.RunInAsync(this, new BounceNotification { 
+                    var n = await ReportBouncesAsync(new BounceNotification { 
                         AccountID = input.Job.AccountID,
                         Error = postBody
                     });
@@ -119,7 +80,7 @@ namespace MailDispatcher.Services.Jobs
                 sb.AppendLine(code);
                 sb.AppendLine(error);
 
-                await Delay(TimeSpan.FromMinutes(15));
+                after = TimeSpan.FromMinutes(15);
             }
             return new JobResponse
             {
@@ -128,9 +89,52 @@ namespace MailDispatcher.Services.Jobs
             };
         }
 
+        private async Task<Notification[]?> ReportBouncesAsync(BounceNotification input)
+        {
+
+            var accountID = input.AccountID;
+            string? error = input.Error;
+
+            if (accountID == null || error == null)
+                return null;
+
+            var urls = await GetUrlsAsync(accountID);
+
+            var tasks = urls.Select(x => NotifyAsync(x, error))
+                .ToList();
+
+            return await Task.WhenAll(tasks);
+        }
+
+        [Activity]
+        public virtual async Task<string[]> GetUrlsAsync(string accountID,
+            [Inject] AccountService? accountService = null)
+        {
+            var acc = await accountService!.GetAsync(accountID);
+            if (acc.BounceTriggers == null)
+                return new string[] { };
+
+            return acc.BounceTriggers
+                .Split('\n')
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .ToArray();
+        }
+
+        [Activity]
+        public virtual Task<Notification> NotifyAsync(
+            string error,
+            string url,
+            [Inject] SmtpService? smtpService = null)
+        {
+            return smtpService!.NotifyAsync(url, error);
+        }
+
 
         [Activity]
         public virtual async Task<(bool sent, string code, string error)> SendEmailAsync(
+            [Schedule]
+            TimeSpan ts,
             DomainJob input,
             int i,
             [Inject] SmtpService smtpService = null!,

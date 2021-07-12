@@ -1,6 +1,6 @@
 ﻿#nullable enable
 using MailDispatcher.Storage;
-using NeuroSpeech.Workflows;
+using NeuroSpeech.Eternity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +14,9 @@ namespace MailDispatcher.Services.Jobs
         public string? Error { get; set; }
     }
 
-    [Workflow]
     public class BounceWorkflow : Workflow<BounceWorkflow, BounceNotification, Notification[]?>
     {
-        public override async Task<Notification[]?> RunTask(BounceNotification input)
+        public override async Task<Notification[]?> RunAsync(BounceNotification input)
         {
             var accountID = input.AccountID;
             string? error = input.Error;

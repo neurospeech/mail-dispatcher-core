@@ -4,7 +4,7 @@ using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Mvc;
 using MimeKit;
-using NeuroSpeech.Workflows;
+using NeuroSpeech.Eternity;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -93,7 +93,7 @@ namespace MailDispatcher.Controllers
         /// <param name="jobId"></param>
         /// <returns></returns>
         [HttpGet("status/{jobId}")]
-        public async Task<WorkflowResult<JobResponse[]>> Status(
+        public async Task<WorkflowStatus<JobResponse[]?>> Status(
             [FromServices] AccountService accountRepository,
             [FromServices] WorkflowService workflowService,
             [FromHeader(Name = "x-id")] string id,
@@ -104,7 +104,7 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != auth)
                 throw new UnauthorizedAccessException();
 
-            return await SendEmailWorkflow.GetResultAsync(workflowService, jobId);
+            return await SendEmailWorkflow.GetStatusAsync(workflowService, jobId);
 
         }
 

@@ -30,7 +30,7 @@ namespace MailDispatcher.Services
 
         internal async Task SendAsync(
             IMailbox address,
-            Stream ms)
+            MemoryStream ms)
         {
             string user = address.User;
             string domain = address.Host;
@@ -51,7 +51,7 @@ namespace MailDispatcher.Services
                 error = blob.Uri.ToString()
             });
 
-            await workflowService.QueueTask<BounceWorkflow>(new BounceNotification
+            await BounceWorkflow.CreateAsync(workflowService, new BounceNotification
             {
                 AccountID = accountId,
                 Error = postBody
