@@ -41,7 +41,7 @@ namespace MailDispatcher.Services.Jobs
             var after = TimeSpan.FromMilliseconds(1);
             for (int i = 0; i < 3; i++)
             {
-                var (sent, code, error) = await SendEmailAsync(after, input, i);
+                var (sent, code, error) = await SendEmailActivityAsync(after, input, i);
                 if (sent)
                 {
                     if (error == null)
@@ -132,7 +132,7 @@ namespace MailDispatcher.Services.Jobs
 
 
         [Activity]
-        public virtual async Task<(bool sent, string code, string error)> SendEmailAsync(
+        public virtual async Task<(bool sent, string code, string error)> SendEmailActivityAsync(
             [Schedule]
             TimeSpan ts,
             DomainJob input,
