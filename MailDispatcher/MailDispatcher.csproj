@@ -14,13 +14,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.17.0" />
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
-    <PackageReference Include="NeuroSpeech.AspNetCoreExtensions" Version="1.3.197" />
+    <PackageReference Include="NeuroSpeech.AspNetCoreExtensions" Version="1.3.241" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.4.4" />
     <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="1.0.7" />
     <PackageReference Include="MailKit" Version="2.11.1" />
     <PackageReference Include="SmtpServer" Version="6.4.0" />
     <PackageReference Include="DnsClient" Version="1.4.0" />
-    <PackageReference Include="NeuroSpeech.Eternity.AzureStorage" Version="1.4.26" />
+    <PackageReference Include="NeuroSpeech.Eternity.AzureStorage" Version="1.4.32" />
   </ItemGroup>
 </Project>
