@@ -7,5 +7,6 @@
         public string Recipients { get; set; }
 
         public string Content { get; set; }
+        public string RequestID { get; set; }
     }
 }
