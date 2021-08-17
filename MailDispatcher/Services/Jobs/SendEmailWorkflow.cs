@@ -12,6 +12,30 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services.Jobs
 {
 
+    public class SendResponse
+    {
+        public bool Sent { get; set; }
+        public string? Error { get; set; }
+
+        public string? Code { get; set; }
+
+        public static implicit operator SendResponse((bool sent, string? code, string? error) r)
+        {
+            return new SendResponse { 
+                Sent = r.sent,
+                Code = r.code,
+                Error = r.error
+            };
+        }
+
+        public void Deconstruct(out bool sent, out string? code, out string? error)
+        {
+            sent = this.Sent;
+            code = this.Code;
+            error = this.Error;
+        }
+    }
+
 
     public class SendEmailWorkflow : Workflow<SendEmailWorkflow, Job, JobResponse[]>
     {
@@ -141,7 +165,7 @@ namespace MailDispatcher.Services.Jobs
 
 
         [Activity]
-        public virtual async Task<(bool sent, string code, string error)> SendEmailActivityAsync(
+        public virtual async Task<SendResponse> SendEmailActivityAsync(
             [Schedule]
             TimeSpan ts,
             DomainJob input,
@@ -151,7 +175,7 @@ namespace MailDispatcher.Services.Jobs
         {
             var start = DateTimeOffset.UtcNow;
             var r = await smtpService.SendAsync(input);
-            if(r.sent && r.error == null)
+            if(r.Sent && r.Error == null)
             {
                 var end = DateTimeOffset.UtcNow - start;
                 telemetryClient.TrackRequest("MailSent", start, end, "200", true);
