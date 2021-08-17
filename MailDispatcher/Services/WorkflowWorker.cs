@@ -20,17 +20,7 @@ namespace MailDispatcher.Services
         {
             while(!stoppingToken.IsCancellationRequested)
             {
-                try {
-                    await workflowService.ProcessMessagesOnceAsync();
-                } catch
-                {}
-                try
-                {
-                    await Task.Delay(15000, workflowService.WaitToken);
-                }catch (TaskCanceledException)
-                {
-
-                }
+                await workflowService.ProcessMessagesAsync(10, stoppingToken);
             }
         }
     }

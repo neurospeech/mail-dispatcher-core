@@ -29,15 +29,6 @@ namespace MailDispatcher.Services
             IServiceProvider services):
             base(storage, services, new EternityClock())
         {
-            this.Waiting = new CancellationTokenSource();
-        }
-
-        public CancellationToken WaitToken => Waiting?.Token ?? default;
-
-        public void Trigger()
-        {
-            Waiting?.Cancel();
-            Waiting = new CancellationTokenSource();
         }
 
     }

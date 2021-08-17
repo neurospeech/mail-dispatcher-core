@@ -63,7 +63,6 @@ namespace MailDispatcher.Storage
             };
 
             var wid = await SendEmailWorkflow.CreateAsync(workflowService, job);
-            workflowService?.Trigger();
             return wid;
         }
 
