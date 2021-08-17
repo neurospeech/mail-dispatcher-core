@@ -15,8 +15,12 @@ namespace MailDispatcher.Services.Jobs
 
     public class SendEmailWorkflow : Workflow<SendEmailWorkflow, Job, JobResponse[]>
     {
+
+        private string? mailPath;
+
         public async override Task<JobResponse[]> RunAsync(Job job)
         {
+            mailPath = job.BlobPath;
             job.RowKey = this.ID;
             var list = job.Recipients
                 .GroupBy(x => x.Domain)
@@ -32,6 +36,11 @@ namespace MailDispatcher.Services.Jobs
             await DeleteEmailAsync(job.BlobPath);
 
             return r.ToArray();
+        }
+
+        protected override Task RunFinallyAsync()
+        {
+            return DeleteEmailAsync(mailPath);
         }
 
 
@@ -151,8 +160,10 @@ namespace MailDispatcher.Services.Jobs
         }
 
         [Activity]
-        public virtual async Task<string> DeleteEmailAsync(string blobPath, [Inject] JobQueueService? jobService = null)
+        public virtual async Task<string> DeleteEmailAsync(string? blobPath, [Inject] JobQueueService? jobService = null)
         {
+            if (blobPath == null)
+                return "ok";
             await jobService!.DeleteAsync(blobPath);
             return "ok";
         }
