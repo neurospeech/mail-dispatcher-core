@@ -4,7 +4,7 @@ using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Mvc;
 using MimeKit;
-using NeuroSpeech.Workflows;
+using NeuroSpeech.Eternity;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +24,7 @@ namespace MailDispatcher.Controllers
         /// </summary>
         /// <param name="accountRepository"></param>
         /// <param name="jobs"></param>
-        /// <param name="id"></param>
+        /// <param name="accountID"></param>
         /// <param name="authKey"></param>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -32,15 +32,15 @@ namespace MailDispatcher.Controllers
         public async Task<IActionResult> Simple(
             [FromServices] AccountService accountRepository,
             [FromServices] JobQueueService jobs,
-            [FromHeader(Name = "x-id")] string id,
+            [FromHeader(Name = "x-id")] string accountID,
             [FromHeader(Name = "x-auth")] string authKey,
             [FromBody] SimpleMail model)
         {
-            var a = await accountRepository.GetAsync(id);
+            var a = await accountRepository.GetAsync(accountID);
             if (a.AuthKey != authKey)
                 return Unauthorized();
             var (ms, recipients) = model.ToMessage( Request.HasFormContentType ? Request.Form.Files : null);
-            var r = await jobs.Queue(id, model.From, recipients, ms);
+            var r = await jobs.Queue(accountID, model.RequestID, model.From, recipients, ms);
             return Ok(new
             {
                 id = r
@@ -53,7 +53,7 @@ namespace MailDispatcher.Controllers
         /// </summary>
         /// <param name="accountRepository"></param>
         /// <param name="jobs"></param>
-        /// <param name="id"></param>
+        /// <param name="accountID"></param>
         /// <param name="authKey"></param>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -61,12 +61,12 @@ namespace MailDispatcher.Controllers
         public async Task<IActionResult> Put(
             [FromServices] AccountService accountRepository,
             [FromServices] JobQueueService jobs,
-            [FromHeader(Name = "x-id")] string id,
+            [FromHeader(Name = "x-id")] string accountID,
             [FromHeader(Name = "x-auth")] string authKey,
             [FromForm] RawMessageRequest model
             )
         {
-            var a = await accountRepository.GetAsync(id);
+            var a = await accountRepository.GetAsync(accountID);
             if (a.AuthKey != authKey)
                 return Unauthorized();
 
@@ -77,7 +77,7 @@ namespace MailDispatcher.Controllers
                 return BadRequest("From is missing");
             if (model.Recipients == null)
                 return BadRequest("Recipient is missing");
-            var r = await jobs.Queue(id, model.From, EmailAddress.ParseList(model.Recipients), file.OpenReadStream());
+            var r = await jobs.Queue(accountID, model.RequestID, model.From, EmailAddress.ParseList(model.Recipients), file.OpenReadStream());
             return Ok(new { 
                 id = r
             });
@@ -88,23 +88,23 @@ namespace MailDispatcher.Controllers
         /// </summary>
         /// <param name="accountRepository"></param>
         /// <param name="workflowService"></param>
-        /// <param name="id"></param>
+        /// <param name="accountID"></param>
         /// <param name="auth"></param>
         /// <param name="jobId"></param>
         /// <returns></returns>
         [HttpGet("status/{jobId}")]
-        public async Task<WorkflowResult<JobResponse[]>> Status(
+        public async Task<WorkflowStatus<JobResponse[]?>> Status(
             [FromServices] AccountService accountRepository,
             [FromServices] WorkflowService workflowService,
-            [FromHeader(Name = "x-id")] string id,
+            [FromHeader(Name = "x-id")] string accountID,
             [FromHeader(Name = "x-auth")] string auth,
             [FromRoute] string jobId)
         {
-            var a = await accountRepository.GetAsync(id);
+            var a = await accountRepository.GetAsync(accountID);
             if (a.AuthKey != auth)
                 throw new UnauthorizedAccessException();
 
-            return await SendEmailWorkflow.GetResultAsync(workflowService, jobId);
+            return await SendEmailWorkflow.GetStatusAsync(workflowService, jobId);
 
         }
 

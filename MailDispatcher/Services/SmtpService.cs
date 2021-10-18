@@ -47,7 +47,7 @@ namespace MailDispatcher.Services
             this.localHost = smtpConfig.Host;
         }
 
-        internal async Task<(bool sent, string code, string error)> SendAsync(DomainJob domainJob, CancellationToken token = default)
+        internal async Task<SendResponse> SendAsync(DomainJob domainJob, CancellationToken token = default)
         {
             var domain = domainJob.Domain;
             var message = domainJob.Job;

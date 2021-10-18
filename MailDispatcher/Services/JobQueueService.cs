@@ -29,7 +29,7 @@ namespace MailDispatcher.Storage
             AzureStorage storage)
         {
             this.workflowService = workflowService;
-            this.blobs = storage.BlobServiceClient.GetBlobContainerClient("mails2");
+            this.blobs = storage.BlobServiceClient.GetBlobContainerClient("mails3");
             this.blobs.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
         }
 
@@ -40,6 +40,7 @@ namespace MailDispatcher.Storage
 
         public async Task<string> Queue(
             string accountId,
+            string requestId,
             string from,
             EmailAddress[] recipients,
             Stream file)
@@ -47,7 +48,7 @@ namespace MailDispatcher.Storage
 
             // verify...
 
-            var id = $"{Guid.NewGuid().ToHexString()}-{DateTime.UtcNow.Ticks}";
+            var id = requestId ?? $"{(long.MaxValue - DateTime.UtcNow.Ticks):d20}-{Guid.NewGuid():N}";
             string blobPath = id + ".eml";
             var blob = blobs.GetBlobClient(blobPath);
 
@@ -61,7 +62,8 @@ namespace MailDispatcher.Storage
                 MessageBodyUrl = blob.Uri.ToString()
             };
 
-            return await SendEmailWorkflow.CreateInstanceAsync(workflowService, job);
+            var wid = await SendEmailWorkflow.CreateAsync(workflowService, job);
+            return wid;
         }
 
     }

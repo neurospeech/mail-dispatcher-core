@@ -1,8 +1,7 @@
-﻿using DurableTask.AzureStorage;
-using DurableTask.Core;
+﻿#nullable enable
 using MailDispatcher.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using NeuroSpeech.Workflows;
+using NeuroSpeech.Eternity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,79 +11,22 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services
 {
     [DIRegister(ServiceLifetime.Singleton)]
-    public class WorkflowService: BaseWorkflowService
+    public class MailDispatcherEternityStorage : NeuroSpeech.Eternity.EternityAzureStorage
     {
-        private readonly AzureStorageOrchestrationService service;
-
-        private readonly TaskHubWorker worker;
-        private readonly Task initAsync;
-
-        public WorkflowService(AzureStorage storage, IServiceProvider services)
+        public MailDispatcherEternityStorage(AzureStorage azureStorage)
+            : base(("md", azureStorage.ConnectionString, true))
         {
-
-            DurableTask.AzureStorage.AzureStorageOrchestrationServiceSettings settings = new DurableTask.AzureStorage.AzureStorageOrchestrationServiceSettings()
-            {
-                StorageConnectionString = storage.ConnectionString,
-                TaskHubName = "mail2",
-                MaxConcurrentTaskActivityWorkItems = 100,
-                MaxConcurrentTaskOrchestrationWorkItems = 50
-            };
-
-            this.service = new DurableTask.AzureStorage.AzureStorageOrchestrationService(settings);
-
-            this.client = new TaskHubClient(service);
-            this.worker = new TaskHubWorker(service);
-            worker.Register(services, typeof(WorkflowService).Assembly);
-
-            this.initAsync = service.CreateIfNotExistsAsync();
         }
+    }
 
-        internal async Task CleanupAsync(CancellationToken stoppingToken)
+    [DIRegister(ServiceLifetime.Singleton)]
+    public class WorkflowService: EternityContext
+    {
+        public WorkflowService(
+            MailDispatcherEternityStorage storage,
+            IServiceProvider services):
+            base(storage, services, new EternityClock())
         {
-            await initAsync;
-            var lastWeek = DateTime.UtcNow.AddDays(-7);
-            var start = new DateTime(2010,1,1);
-            await service.PurgeInstanceHistoryAsync(start, lastWeek, new OrchestrationStatus[] { 
-                OrchestrationStatus.Failed,
-                OrchestrationStatus.Completed,
-                OrchestrationStatus.Canceled,
-                OrchestrationStatus.Terminated,
-            });
-        }
-
-        public async Task<string> QueueTask<T>(object input = null)
-        {
-            await initAsync;
-            var instance = await client.CreateOrchestrationInstanceAsync(typeof(T), input);
-            return instance.InstanceId;
-        }
-
-        public async Task RaiseEvent<T>(string id, string name, object data)
-        {
-            var state = await client.GetOrchestrationStateAsync(id);
-            await client.RaiseEventAsync(state.OrchestrationInstance, name, data);
-        }
-
-        internal async Task<string> GetAsync(string f)
-        {
-            try
-            {
-                return (await client.GetOrchestrationStateAsync(f)).OrchestrationInstance.InstanceId;
-            } catch
-            {
-                return null;
-            }
-        }
-
-        public async Task RunAsync()
-        {
-            await initAsync;
-            await worker.StartAsync();
-        }
-
-        public async Task StopAsync()
-        {
-            await worker.StopAsync(true);
         }
 
     }

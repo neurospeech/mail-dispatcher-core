@@ -29,6 +29,7 @@ namespace MailDispatcher.Storage
         public string? HtmlBody { get; set; }
 
         public string? UnsubscribeLink { get; set; }
+        public string? RequestID { get; set; }
 
         public (Stream stream, EmailAddress[] recipients) ToMessage(IFormFileCollection? files)
         {

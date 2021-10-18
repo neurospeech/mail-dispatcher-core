@@ -51,7 +51,7 @@ namespace MailDispatcher.Services
                 error = blob.Uri.ToString()
             });
 
-            await workflowService.QueueTask<BounceWorkflow>(new BounceNotification
+            await BounceWorkflow.CreateAsync(workflowService, new BounceNotification
             {
                 AccountID = accountId,
                 Error = postBody
