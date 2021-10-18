@@ -20,7 +20,7 @@ namespace MailDispatcher.Services
         {
             while(!stoppingToken.IsCancellationRequested)
             {
-                await workflowService.ProcessMessagesAsync(100, stoppingToken);
+                await workflowService.ProcessMessagesAsync(100, default, stoppingToken);
             }
         }
     }

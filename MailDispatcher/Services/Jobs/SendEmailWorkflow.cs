@@ -44,6 +44,8 @@ namespace MailDispatcher.Services.Jobs
 
         public async override Task<JobResponse[]> RunAsync(Job job)
         {
+            this.PreserveTime = TimeSpan.FromDays(1);
+            this.FailurePreserveTime = TimeSpan.FromDays(7);
             mailPath = job.BlobPath;
             job.RowKey = this.ID;
             var list = job.Recipients
@@ -113,7 +115,7 @@ namespace MailDispatcher.Services.Jobs
                 sb.AppendLine(code);
                 sb.AppendLine(error);
 
-                after = TimeSpan.FromMinutes(15);
+                after = after.Add(TimeSpan.FromMinutes(15));
             }
             return new JobResponse
             {

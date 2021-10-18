@@ -14,7 +14,7 @@ namespace MailDispatcher.Services
     public class MailDispatcherEternityStorage : NeuroSpeech.Eternity.EternityAzureStorage
     {
         public MailDispatcherEternityStorage(AzureStorage azureStorage)
-            : base("md", azureStorage.ConnectionString)
+            : base(("md", azureStorage.ConnectionString, true))
         {
         }
     }
@@ -22,8 +22,6 @@ namespace MailDispatcher.Services
     [DIRegister(ServiceLifetime.Singleton)]
     public class WorkflowService: EternityContext
     {
-        private CancellationTokenSource? Waiting;
-
         public WorkflowService(
             MailDispatcherEternityStorage storage,
             IServiceProvider services):

@@ -48,7 +48,7 @@ namespace MailDispatcher.Storage
 
             // verify...
 
-            var id = requestId ?? $"{Guid.NewGuid().ToHexString()}-{DateTime.UtcNow.Ticks}";
+            var id = requestId ?? $"{(long.MaxValue - DateTime.UtcNow.Ticks):d20}-{Guid.NewGuid():N}";
             string blobPath = id + ".eml";
             var blob = blobs.GetBlobClient(blobPath);
 
