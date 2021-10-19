@@ -9,7 +9,7 @@
 5. If server did not accept the message, an exception will be saved in `JobResponse`
 6. Delete all jobs after 7 days
 7. Save email in blob till the time it is trying to send
-8. This app uses Durable Tasks, so after crash and restart, it will resume the operations
+8. This app uses Eternity Framework, so after crash and restart, it will resume the operations
 
 ## Setup
 

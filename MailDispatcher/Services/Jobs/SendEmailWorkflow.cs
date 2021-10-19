@@ -115,7 +115,7 @@ namespace MailDispatcher.Services.Jobs
                 sb.AppendLine(code);
                 sb.AppendLine(error);
 
-                after = after.Add(TimeSpan.FromMinutes(15));
+                after = after.Add(TimeSpan.FromMinutes(30));
             }
             return new JobResponse
             {
