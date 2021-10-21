@@ -153,6 +153,8 @@ namespace MailDispatcher.Services
 
             foreach (var mx in mxes)
             {
+                if (string.IsNullOrWhiteSpace(mx))
+                    continue;
                 try
                 {
                     await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable);
