@@ -147,8 +147,12 @@ namespace MailDispatcher.Services
 
             if(cache.TryGetValue<HostPort>(mxKey, out var hp))
             {
-                await client.ConnectAsync(hp.Host, hp.Port, hp.SecureSocketOptions);
-                return (client, null);
+                if (hp.Host != null)
+                {
+                    await client.ConnectAsync(hp.Host, hp.Port, hp.SecureSocketOptions);
+                    return (client, null);
+                }
+                return (null, $"Could not connect to any MX host on {domain}");
             }
 
             foreach (var mx in mxes)
@@ -209,6 +213,8 @@ namespace MailDispatcher.Services
                 }
 
             }
+
+            cache.Set(mxKey, new { }, TimeSpan.FromMinutes(15));
 
             return (null, $"Could not connect to any MX host on {domain}");
         }
