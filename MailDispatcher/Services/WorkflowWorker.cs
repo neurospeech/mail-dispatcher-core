@@ -21,7 +21,7 @@ namespace MailDispatcher.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while(false)
+            while(true)
             {
                 if (stoppingToken.IsCancellationRequested)
                 {
