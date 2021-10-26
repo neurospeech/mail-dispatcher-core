@@ -134,7 +134,7 @@ namespace MailDispatcher.Storage
                         HtmlBody = msg.HtmlBody,
                         TextBody = msg.TextBody,
                         Date = msg.Date,
-                        From = msg.From.OfType<MailboxAddress>().Select(x => new { x.Name, x.Address }),
+                        From = msg.From.OfType<MailboxAddress>().Select(x => new { x.Name, x.Address }).FirstOrDefault(),
                         To = msg.To.OfType<MailboxAddress>().Select(x => new { x.Name, x.Address }),
                         Cc = msg.Cc.OfType<MailboxAddress>().Select(x => new { x.Name, x.Address })
                     });
