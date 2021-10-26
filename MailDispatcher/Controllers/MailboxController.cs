@@ -1,4 +1,5 @@
-﻿using MailDispatcher.Services;
+﻿using MailDispatcher.Core.Auth;
+using MailDispatcher.Services;
 using MailDispatcher.Services.Jobs;
 using MailDispatcher.Storage;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Controllers
 {
     [Route("api/temp-mailboxes")]
+    [AllowPublic]
     public class MailboxController : Controller
     {
 
