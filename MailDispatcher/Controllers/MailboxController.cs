@@ -62,6 +62,25 @@ namespace MailDispatcher.Controllers
         }
 
         [HttpGet("{id}")]
+        public async Task<IActionResult> List(
+            [FromRoute] string id,
+            [FromQuery] string next,
+            [FromServices] MailboxService mailboxService,
+            [FromServices] AccountService accountRepository,
+            [FromHeader(Name = "x-id")] string accountID,
+            [FromHeader(Name = "x-auth")] string authKey,
+            CancellationToken cancellationToken
+            )
+        {
+            var a = await accountRepository.GetAsync(accountID);
+            if (a.AuthKey != authKey)
+                return Unauthorized();
+
+            var r = await mailboxService.GetAsync(id);
+
+            return Ok(await r.ListAsync(next, cancellationToken));
+        }
+
         [HttpGet("{id}/{mailId}")]
         public async Task<IActionResult> Get(
             [FromRoute] string id,
@@ -81,15 +100,11 @@ namespace MailDispatcher.Controllers
 
             var r = await mailboxService.GetAsync(id);
 
-            if (mailId != null)
-            {
-                var s = await r.ReadAsync(mailId);
-                this.Response.RegisterForDispose(s);
-                return File(s, "application/octat-stream");
-            }
-
-            return Ok(await r.ListAsync(next, cancellationToken));
+            var s = await r.ReadAsync(mailId);
+            this.Response.RegisterForDispose(s);
+            return File(s, "application/octat-stream");
         }
+
 
     }
 }
