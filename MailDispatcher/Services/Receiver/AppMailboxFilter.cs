@@ -49,16 +49,19 @@ namespace MailDispatcher.Services.Receiver
 
         public async Task<MailboxFilterResult> CanDeliverToAsync(ISessionContext context, IMailbox to, IMailbox from, CancellationToken cancellationToken)
         {
-            if (to.Host != host)
-            {
-                return MailboxFilterResult.NoTemporarily;
-            }
+            if (context.Authentication.IsAuthenticated)
+                return MailboxFilterResult.Yes;
 
             if(await mailboxService.ExistsAsync(to.ToEmailAddress().ToLower()))
             {
                 return MailboxFilterResult.Yes;
             }
-            
+
+            if (to.Host != host)
+            {
+                return MailboxFilterResult.NoTemporarily;
+            }
+
             string f = to.User.Split('-').Last();
             var item = await SendEmailWorkflow.GetStatusAsync(workflowService, f);
             if (item == null)
