@@ -21,15 +21,18 @@ namespace MailDispatcher.Services.Receiver
         private static readonly Task<MailboxFilterResult> SizeLimitExceeded = Task.FromResult(MailboxFilterResult.SizeLimitExceeded);
         private ILogger<SmtpReceiver> logger;
         private readonly WorkflowService workflowService;
+        private readonly MailboxService mailboxService;
         private readonly string host;
 
         public AppMailboxFilter(
             ILogger<SmtpReceiver> logger, 
             SmtpConfig config,
-            WorkflowService workflowService)
+            WorkflowService workflowService,
+            MailboxService mailboxService)
         {
             this.logger = logger;
             this.workflowService = workflowService;
+            this.mailboxService = mailboxService;
             this.host = config.Host;
         }
 
@@ -37,7 +40,7 @@ namespace MailDispatcher.Services.Receiver
         {
             // abuse still pending..
 
-            if (size > 1 * 1024 * 1024)
+            if (size > 50 * 1024 * 1024)
             {
                 return SizeLimitExceeded;
             }
@@ -51,6 +54,11 @@ namespace MailDispatcher.Services.Receiver
                 return MailboxFilterResult.NoTemporarily;
             }
 
+            if(await mailboxService.ExistsAsync(to.ToEmailAddress().ToLower()))
+            {
+                return MailboxFilterResult.Yes;
+            }
+            
             string f = to.User.Split('-').Last();
             var item = await SendEmailWorkflow.GetStatusAsync(workflowService, f);
             if (item == null)

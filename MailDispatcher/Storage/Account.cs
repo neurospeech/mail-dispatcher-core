@@ -25,6 +25,8 @@ namespace MailDispatcher.Storage
 
         public bool Active { get; set; }
 
+        public bool EnableMailboxes { get; set; }
+
         public string Password { get; set; }
 
         public string Notifications { get; set; }

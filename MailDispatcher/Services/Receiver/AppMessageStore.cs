@@ -24,6 +24,7 @@ namespace MailDispatcher.Services.Receiver
         private readonly BounceService bounceService;
         private readonly JobQueueService jobs;
         private readonly TempFileService tempFileService;
+        private readonly MailboxService mailboxService;
         DkimPublicKeyLocator publicKeyLocator;
         DkimVerifier verifier;
 
@@ -32,12 +33,14 @@ namespace MailDispatcher.Services.Receiver
             DnsLookupService dnsLookupService,
             BounceService bounceService,
             JobQueueService jobs,
-            TempFileService tempFileService)
+            TempFileService tempFileService,
+            MailboxService mailboxService)
         {
             this.logger = logger;
             this.bounceService = bounceService;
             this.jobs = jobs;
             this.tempFileService = tempFileService;
+            this.mailboxService = mailboxService;
             publicKeyLocator = new DkimPublicKeyLocator(dnsLookupService);
             verifier = new DkimVerifier(publicKeyLocator);
         }
@@ -63,10 +66,21 @@ namespace MailDispatcher.Services.Receiver
                     return SmtpResponse.Ok;
                 }
 
+                // either it has to have an associated workflow
+                // or it needs to have mailboxes enabled
+
+                // check if we have any mailbox
+                var from = transaction.From.ToEmailAddress();
+                var mailbox = await mailboxService.GetAsync(from);
+                if (mailbox.Exists)
+                {
+                    await mailbox.Save(textMessage.Content, cancellationToken);
+                    return SmtpResponse.Ok;
+                }
 
                 var stream = await tempFileService.Create(textMessage.Content);
                 stream.Seek(0, SeekOrigin.Begin);
-                var message = await MimeMessage.LoadAsync(textMessage.Content, cancellationToken);
+                var message = await MimeMessage.LoadAsync(stream, cancellationToken);
                 stream.Seek(0, SeekOrigin.Begin);
                 var recipients = transaction.To.Select(x => x.ToEmailAddress()).ToList();
 
