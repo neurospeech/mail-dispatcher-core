@@ -48,9 +48,12 @@ namespace MailDispatcher.Storage
             return (await GetAsync(name)).Exists;
         }
 
-        public Task<Mailbox> GetAsync(string name = null, bool create = false)
+        public Task<Mailbox> GetAsync(string name, bool create = false)
         {
-            name = name?.ToLower() ?? Guid.NewGuid().ToString("N").ToLower();
+            if (name.StartsWith('@'))
+            {
+                name = Guid.NewGuid().ToString("N") + name;
+            }
             return cache.GetOrCreateAsync(name, async (c) =>
             {
                 var client = mailboxes.GetBlobClient($"{name}/config.json");

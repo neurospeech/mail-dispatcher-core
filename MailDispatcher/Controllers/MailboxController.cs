@@ -15,7 +15,17 @@ namespace MailDispatcher.Controllers
     public class MailboxController : Controller
     {
 
-        [HttpPut("{?id}")]
+        /// <summary>
+        /// Create email address with given id, set it to only `@domainname` to generate username automatically.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="mailboxService"></param>
+        /// <param name="accountRepository"></param>
+        /// <param name="workflowService"></param>
+        /// <param name="accountID"></param>
+        /// <param name="authKey"></param>
+        /// <returns></returns>
+        [HttpPut("{id}")]
         public async Task<IActionResult> Create(
             [FromRoute] string id,
             [FromServices] MailboxService mailboxService,
@@ -38,8 +48,7 @@ namespace MailDispatcher.Controllers
             var r = await mailboxService.GetAsync(id, true);
 
             return Ok(new { 
-                username = r.Name,
-                address = $"{r.Name}@{a.DomainName}"
+                address = $"{r.Name}"
             });
         }
 
