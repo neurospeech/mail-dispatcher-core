@@ -30,6 +30,9 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != authKey)
                 return Unauthorized();
 
+            if (!id.EndsWith("@" + a.DomainName))
+                return Unauthorized();
+
             await TemporaryMailboxWorkflow.CreateAsync(workflowService, id);
 
             var r = await mailboxService.GetAsync(id, true);
