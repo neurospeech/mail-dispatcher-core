@@ -71,12 +71,14 @@ namespace MailDispatcher.Services.Receiver
 
                 // check if we have any mailbox
                 bool saved = false;
+                var stream = await tempFileService.Create(textMessage.Content);
                 foreach (var to in transaction.To)
                 {
                     var mailbox = await mailboxService.GetAsync(to.ToEmailAddress());
                     if (mailbox.Exists)
                     {
-                        await mailbox.Save(textMessage.Content, cancellationToken);
+                        stream.Seek(0, SeekOrigin.Begin);
+                        await mailbox.Save(stream, cancellationToken);
                         saved = true;
                     }
                 }
@@ -85,7 +87,6 @@ namespace MailDispatcher.Services.Receiver
                     return SmtpResponse.Ok;
                 }
 
-                var stream = await tempFileService.Create(textMessage.Content);
                 stream.Seek(0, SeekOrigin.Begin);
                 var message = await MimeMessage.LoadAsync(stream, cancellationToken);
                 stream.Seek(0, SeekOrigin.Begin);
