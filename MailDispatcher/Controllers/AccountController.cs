@@ -113,7 +113,7 @@ namespace MailDispatcher.Controllers
         /// <param name="repository"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        [HttpPut("new")]
+        [HttpPut("save")]
         public async Task<AccountInfo> Put(
             [FromServices] AccountService repository,
             [FromBody] PutBody model
