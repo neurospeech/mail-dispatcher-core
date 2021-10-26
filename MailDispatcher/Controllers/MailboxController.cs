@@ -26,6 +26,9 @@ namespace MailDispatcher.Controllers
         /// <param name="authKey"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(409)]
         public async Task<IActionResult> Create(
             [FromRoute] string id,
             [FromServices] MailboxService mailboxService,
@@ -39,10 +42,13 @@ namespace MailDispatcher.Controllers
             var a = await accountRepository.GetAsync(accountID);
             if (a.AuthKey != authKey)
                 return Unauthorized();
-
-            if (!id.EndsWith("@" + a.DomainName) || !a.MailboxesEnabled)
+            if (!a.MailboxesEnabled)
             {
-                return Unauthorized();
+                return this.Conflict();
+            }
+            if (!id.EndsWith("@" + a.DomainName))
+            {
+                return BadRequest();
             }
 
             var r = await mailboxService.GetAsync(id, true);
