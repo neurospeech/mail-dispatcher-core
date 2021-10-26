@@ -39,6 +39,7 @@ namespace MailDispatcher.Storage
         public MailboxService(AzureStorage storage, AppCache<Mailbox> cache)
         {
             this.mailboxes = storage.BlobServiceClient.GetBlobContainerClient("mailboxes");
+            this.mailboxes.CreateIfNotExists();
             this.cache = cache;
         }
 
