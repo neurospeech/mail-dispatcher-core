@@ -27,7 +27,7 @@ namespace MailDispatcher.Controllers
                 DomainName = account.DomainName;
                 Selector = account.Selector;
                 PublicKey = account.PublicKey;
-
+                MailboxesEnabled = account.MailboxesEnabled;
             }
 
             /// <summary>
@@ -54,6 +54,11 @@ namespace MailDispatcher.Controllers
             /// Public key for domain key
             /// </summary>
             public string PublicKey { get; internal set; }
+
+            /// <summary>
+            /// If incoming email is enabled
+            /// </summary>
+            public bool MailboxesEnabled { get; internal set; }
         }
 
         /// <summary>
@@ -95,16 +100,41 @@ namespace MailDispatcher.Controllers
             /// Optional, multiple http rest endpoints separated by new lines, where you will receive bounce notifications
             /// </summary>
             public string BounceTriggers { get; set; }
+
+            /// <summary>
+            /// If incoming emails are enabled
+            /// </summary>
+            public bool MailboxesEnabled { get; set; }
         }
 
         /// <summary>
-        /// Create new account
+        /// Update MailboxesEnabled, BounceTriggers
+        /// </summary>
+        /// <param name="repository"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPut("new")]
+        public async Task<AccountInfo> Put(
+            [FromServices] AccountService repository,
+            [FromBody] PutBody model
+        )
+        {
+            var a = await repository.GetAsync(model.ID);
+            a.MailboxesEnabled = model.MailboxesEnabled;
+            a.BounceTriggers = model.BounceTriggers;
+            var r = await repository.SaveAsync(a);
+            return new AccountInfo(r);
+        }
+
+
+        /// <summary>
+        /// Create new account, warning, this method will reset DomainKeys if account already exists.. use patch to update other things
         /// </summary>
         /// <param name="repository"></param>
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost("new")]
-        public async Task<AccountInfo> Put(
+        public async Task<AccountInfo> Post(
             [FromServices] AccountService repository,
             [FromBody] PutBody model
         )
@@ -119,7 +149,8 @@ namespace MailDispatcher.Controllers
                 PublicKey = rsa.ExportPemPublicKey(),
                 PrivateKey = rsa.ExportPem(),
                 AuthKey = Guid.NewGuid().ToHexString(),
-                BounceTriggers = model.BounceTriggers
+                BounceTriggers = model.BounceTriggers,
+                MailboxesEnabled = model.MailboxesEnabled
             });
 
             return new AccountInfo(r);

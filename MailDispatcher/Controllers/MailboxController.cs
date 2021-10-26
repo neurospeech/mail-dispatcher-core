@@ -40,7 +40,7 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != authKey)
                 return Unauthorized();
 
-            if (!id.EndsWith("@" + a.DomainName) || !a.EnableMailboxes)
+            if (!id.EndsWith("@" + a.DomainName) || !a.MailboxesEnabled)
             {
                 return Unauthorized();
             }
