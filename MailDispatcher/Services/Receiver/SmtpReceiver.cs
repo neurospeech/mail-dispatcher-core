@@ -44,9 +44,9 @@ namespace MailDispatcher.Services.Receiver
                         .Port(25)
                         // .Port(465, isSecure: true)
                         // .Certificate(CreateX509Certificate2())
+                        .UserAuthenticator(userAuthenticator)
                         .MessageStore(messageStore)
                         .MailboxFilter(mailboxFilter)
-                        .UserAuthenticator(userAuthenticator)
                         .Logger(new AppLogger(_logger))
                         .Build();
 
