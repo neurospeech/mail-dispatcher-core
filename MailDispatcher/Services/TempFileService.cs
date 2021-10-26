@@ -19,6 +19,9 @@ namespace MailDispatcher.Services
         public TempFileService(IConfiguration config)
         {
             this.TempFolder = config.GetValue<string>("TempFolder");
+            if (!Directory.Exists(this.TempFolder)) {
+                Directory.CreateDirectory(this.TempFolder);
+            }
         }
 
         public Stream Create(string name = null)
