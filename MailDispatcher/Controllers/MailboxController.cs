@@ -40,12 +40,13 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != authKey)
                 return Unauthorized();
 
-            if (!id.EndsWith("@" + a.DomainName))
+            if (!id.EndsWith("@" + a.DomainName) || !a.EnableMailboxes)
+            {
                 return Unauthorized();
-
-            await TemporaryMailboxWorkflow.CreateAsync(workflowService, id);
+            }
 
             var r = await mailboxService.GetAsync(id, true);
+            await TemporaryMailboxWorkflow.CreateAsync(workflowService, id);
 
             return Ok(new { 
                 address = $"{r.Name}"
