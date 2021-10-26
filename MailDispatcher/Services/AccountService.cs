@@ -109,10 +109,16 @@ namespace MailDispatcher.Storage
             return id;
         }
 
-        public async Task<Stream> ReadAsync(string id, CancellationToken cancellationToken = default)
+        public Task<Stream> ReadAsync(string id, CancellationToken cancellationToken = default)
         {
             var blob = Container.GetBlobClient(Name + "/mails/" + id);
-            return await blob.OpenReadAsync(new Azure.Storage.Blobs.Models.BlobOpenReadOptions(false), cancellationToken);
+            return blob.OpenReadAsync(new Azure.Storage.Blobs.Models.BlobOpenReadOptions(false), cancellationToken);
+        }
+
+        public Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var blob = Container.GetBlobClient(Name + "/mails/" + id);
+            return blob.DeleteIfExistsAsync(Azure.Storage.Blobs.Models.DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
         }
 
         public async Task<List<Mail>> ListAsync(string next = null, CancellationToken cancellationToken = default)

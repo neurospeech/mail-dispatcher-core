@@ -106,5 +106,30 @@ namespace MailDispatcher.Controllers
         }
 
 
+
+        [HttpDelete("{id}/{mailId}")]
+        public async Task<IActionResult> Delete(
+            [FromRoute] string id,
+            [FromRoute] string mailId,
+            [FromServices] MailboxService mailboxService,
+            [FromServices] AccountService accountRepository,
+            [FromHeader(Name = "x-id")] string accountID,
+            [FromHeader(Name = "x-auth")] string authKey,
+            CancellationToken cancellationToken
+            )
+        {
+
+            var a = await accountRepository.GetAsync(accountID);
+            if (a.AuthKey != authKey)
+                return Unauthorized();
+
+            var r = await mailboxService.GetAsync(id);
+
+            await r.DeleteAsync(mailId, cancellationToken);
+            return Ok(new { });
+        }
+
+
+
     }
 }
