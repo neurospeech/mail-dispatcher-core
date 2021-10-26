@@ -70,11 +70,18 @@ namespace MailDispatcher.Services.Receiver
                 // or it needs to have mailboxes enabled
 
                 // check if we have any mailbox
-                var from = transaction.From.ToEmailAddress();
-                var mailbox = await mailboxService.GetAsync(from);
-                if (mailbox.Exists)
+                bool saved = false;
+                foreach (var to in transaction.To)
                 {
-                    await mailbox.Save(textMessage.Content, cancellationToken);
+                    var mailbox = await mailboxService.GetAsync(to.ToEmailAddress());
+                    if (mailbox.Exists)
+                    {
+                        await mailbox.Save(textMessage.Content, cancellationToken);
+                        saved = true;
+                    }
+                }
+                if (saved)
+                {
                     return SmtpResponse.Ok;
                 }
 
