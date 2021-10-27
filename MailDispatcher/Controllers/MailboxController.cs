@@ -65,13 +65,12 @@ namespace MailDispatcher.Controllers
         public async Task<IActionResult> List(
             [FromRoute] string id,
             [FromQuery] string next,
-            [FromQuery] int max = 100,
             [FromServices] MailboxService mailboxService,
             [FromServices] AccountService accountRepository,
             [FromHeader(Name = "x-id")] string accountID,
             [FromHeader(Name = "x-auth")] string authKey,
-            CancellationToken cancellationToken
-            )
+            CancellationToken cancellationToken, 
+            [FromQuery] int max = 100)
         {
             var a = await accountRepository.GetAsync(accountID);
             if (a.AuthKey != authKey)
