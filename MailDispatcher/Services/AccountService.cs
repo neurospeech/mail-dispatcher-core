@@ -121,11 +121,11 @@ namespace MailDispatcher.Storage
             return blob.DeleteIfExistsAsync(Azure.Storage.Blobs.Models.DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: cancellationToken);
         }
 
-        public async Task<List<Mail>> ListAsync(string next = null, CancellationToken cancellationToken = default)
+        public async Task<List<Mail>> ListAsync(string next = null, int max = 100, CancellationToken cancellationToken = default)
         {
             var prefix = Name + "/mails/";
             var pages = Container.GetBlobsAsync(Azure.Storage.Blobs.Models.BlobTraits.All, Azure.Storage.Blobs.Models.BlobStates.All, prefix, cancellationToken)
-                .AsPages(next, 100);
+                .AsPages(next, max);
             var list = new List<Mail>();
             await foreach (var page in pages)
             {

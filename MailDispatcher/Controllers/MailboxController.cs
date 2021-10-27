@@ -65,6 +65,7 @@ namespace MailDispatcher.Controllers
         public async Task<IActionResult> List(
             [FromRoute] string id,
             [FromQuery] string next,
+            [FromQuery] int max = 100,
             [FromServices] MailboxService mailboxService,
             [FromServices] AccountService accountRepository,
             [FromHeader(Name = "x-id")] string accountID,
@@ -78,7 +79,7 @@ namespace MailDispatcher.Controllers
 
             var r = await mailboxService.GetAsync(id);
 
-            return Ok(await r.ListAsync(next, cancellationToken));
+            return Ok(await r.ListAsync(next, max, cancellationToken));
         }
 
         [HttpGet("{id}/{mailId}")]
