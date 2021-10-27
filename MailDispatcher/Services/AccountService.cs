@@ -136,6 +136,7 @@ namespace MailDispatcher.Storage
                     var msg = await MimeMessage.LoadAsync(stream, cancellationToken);
                     list.Add(new Mail
                     {
+                        ID = Path.GetFileName(blob.Name),
                         Subject = msg.Subject,
                         HtmlBody = msg.HtmlBody,
                         TextBody = msg.TextBody,
@@ -160,6 +161,7 @@ namespace MailDispatcher.Storage
         public object From { get; internal set; }
         public object To { get; internal set; }
         public object Cc { get; internal set; }
+        public string ID { get; internal set; }
     }
 
 }
