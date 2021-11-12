@@ -7,19 +7,26 @@ using System.Threading.Tasks;
 
 namespace MailDispatcher.Services.Jobs
 {
-    public class TemporaryMailboxWorkflow : Workflow<TemporaryMailboxWorkflow, string, string>
+    public class CreateMailboxRequest
+    {
+        public string Address;
+
+        public int MaxDays;
+    }
+
+    public class TemporaryMailboxWorkflow : Workflow<TemporaryMailboxWorkflow, CreateMailboxRequest, string>
     {
 
         public const string Delete = nameof(Delete);
         private string Address;
 
-        public override async Task<string> RunAsync(string input)
+        public override async Task<string> RunAsync(CreateMailboxRequest input)
         {
-            this.Address = input;
+            this.Address = input.Address;
 
             await CreateMailboxAsync();
 
-            await WaitForExternalEventsAsync(TimeSpan.FromDays(1), Delete);
+            await WaitForExternalEventsAsync(TimeSpan.FromDays(input.MaxDays), Delete);
 
             await DeleteAll();
 

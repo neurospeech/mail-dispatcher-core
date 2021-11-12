@@ -37,7 +37,8 @@ namespace MailDispatcher.Controllers
             [FromServices] AccountService accountRepository,
             [FromServices] WorkflowService workflowService,
             [FromHeader(Name = "x-id")] string accountID,
-            [FromHeader(Name = "x-auth")] string authKey
+            [FromHeader(Name = "x-auth")] string authKey,
+            [FromQuery] int days = 1 
             )
         {
 
@@ -54,7 +55,12 @@ namespace MailDispatcher.Controllers
             }
 
             var r = await mailboxService.GetAsync(id, true);
-            await TemporaryMailboxWorkflow.CreateAsync(workflowService, id);
+            await TemporaryMailboxWorkflow.CreateAsync(workflowService, new NeuroSpeech.Eternity.WorkflowOptions<CreateMailboxRequest> {
+                Input = new CreateMailboxRequest { 
+                    Address = id,
+                    MaxDays = days
+                }
+            });
 
             return Ok(new { 
                 address = $"{r.Name}"
