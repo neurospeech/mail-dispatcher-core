@@ -22,11 +22,14 @@ namespace MailDispatcher.Services
     [DIRegister(ServiceLifetime.Singleton)]
     public class WorkflowService: EternityContext
     {
+        public readonly MailDispatcherEternityStorage Storage;
+
         public WorkflowService(
             MailDispatcherEternityStorage storage,
             IServiceProvider services):
             base(storage, services, new EternityClock())
         {
+            this.Storage = storage;
         }
 
     }
