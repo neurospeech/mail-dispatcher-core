@@ -1,12 +1,17 @@
 ﻿#nullable enable
+using MailDispatcher.Core;
 using MailDispatcher.Storage;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Caching;
+using Microsoft.Extensions.Caching.Memory;
 using NeuroSpeech.Eternity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace MailDispatcher.Services.Jobs
@@ -36,9 +41,10 @@ namespace MailDispatcher.Services.Jobs
         }
     }
 
-
     public class SendEmailWorkflow : Workflow<SendEmailWorkflow, Job, JobResponse[]>
     {
+        public static Regex throttleRegex = new Regex("(throttle|try|again|timed\\s+out|timeout)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
 
         private string? mailPath;
 
@@ -53,9 +59,23 @@ namespace MailDispatcher.Services.Jobs
                 .Select(x => new DomainJob(job, x))
                 .ToList();
 
+            var cache = this.Context.ResolveSingleton<StrongCache<ThrottleInfo>>();
+            
             var r = new List<JobResponse>();
             foreach(var d in list)
             {
+                if (cache.TryGetValue(d.Domain, out var ti))
+                {
+                    var now = DateTimeOffset.UtcNow;
+                    if (ti.Expiration > now)
+                    {
+                        var diff = ti.Expiration - now;
+                        if (diff.TotalMinutes < 5 && diff.TotalMilliseconds > 0)
+                        {
+                            await this.Delay(diff);
+                        }
+                    }
+                }
                 r.Add(await SendEmailAsync(d));
             }
 
@@ -165,22 +185,43 @@ namespace MailDispatcher.Services.Jobs
             return smtpService!.NotifyAsync(url, error);
         }
 
-
         [Activity]
         public virtual async Task<SendResponse> SendEmailActivityAsync(
             [Schedule]
             TimeSpan ts,
             DomainJob input,
             int i,
+            [Inject] StrongCache<ThrottleInfo> cache = null!,
             [Inject] SmtpService smtpService = null!,
             [Inject] TelemetryClient telemetryClient = null!)
         {
             var start = DateTimeOffset.UtcNow;
             var r = await smtpService.SendAsync(input);
-            if(r.Sent && r.Error == null)
+            if (r.Sent && r.Error == null)
             {
                 var end = DateTimeOffset.UtcNow - start;
                 telemetryClient.TrackRequest("MailSent", start, end, "200", true);
+                return r;
+            }
+            if (r.Error != null)
+            {
+                var key = input.Domain;
+                if (throttleRegex.IsMatch(r.Error))
+                {
+                    var end = DateTimeOffset.UtcNow - start;
+                    var t = new RequestTelemetry("Throttle", start, end, "300", true);
+                    t.Url = new Uri($"https://{input.Domain}");
+                    telemetryClient.TrackRequest(t);
+                    if (cache.TryGetValue(key, out var ti))
+                    {
+                        ti.Increment();
+                    }
+                    else
+                    {
+                        ti = new ThrottleInfo(input.Domain);
+                    }
+                    cache.Set(key, ti, ti.Expiration);
+                }
             }
             return r;
         }
@@ -195,5 +236,22 @@ namespace MailDispatcher.Services.Jobs
         }
 
 
+    }
+
+    public class ThrottleInfo
+    {
+        public readonly string Domain;
+        public DateTimeOffset Expiration { get; private set; }
+
+        public ThrottleInfo(string domain)
+        {
+            this.Domain = domain;
+            this.Expiration = DateTimeOffset.UtcNow.AddSeconds(15);
+        }
+
+        internal void Increment()
+        {
+            this.Expiration = this.Expiration.AddSeconds(5);
+        }
     }
 }

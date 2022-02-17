@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using MailDispatcher.Core;
 
 namespace MailDispatcher
 {
@@ -45,6 +46,7 @@ namespace MailDispatcher
 
             services.AddHttpClient();
             services.AddMemoryCache();
+            services.AddSingleton(typeof(StrongCache<>));
             services.AddSingleton(typeof(AppCache<>));
 
             services.AddMvc(c => {
