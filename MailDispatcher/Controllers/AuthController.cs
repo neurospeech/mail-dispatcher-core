@@ -107,7 +107,7 @@ namespace MailDispatcher.Controllers
             {
                 if (model.Username == "admin")
                 {
-                    string defaultPassword = configuration.GetValue<string>("mail-dispatcher");
+                    string defaultPassword = configuration.GetValue<string>("AdminPassword");
                     user = await accountRepository.SaveAsync(new Account
                     {
                         ID = "admin",
@@ -117,7 +117,9 @@ namespace MailDispatcher.Controllers
                 }
             }
 
-            if (user.Password != hashService.Hash(user.ID, model.Password))
+            var hash = hashService.Hash(user.ID, model.Password);
+
+            if (user.Password != hash)
                 return Unauthorized("Password mismatch");
 
             if (!user.Active)
