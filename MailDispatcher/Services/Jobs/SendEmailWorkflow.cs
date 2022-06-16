@@ -50,8 +50,8 @@ namespace MailDispatcher.Services.Jobs
 
         public async override Task<JobResponse[]> RunAsync(Job job)
         {
-            this.PreserveTime = TimeSpan.FromDays(1);
-            this.FailurePreserveTime = TimeSpan.FromDays(7);
+            this.PreserveTime = TimeSpan.FromMinutes(15);
+            this.FailurePreserveTime = TimeSpan.FromDays(1);
             mailPath = job.BlobPath;
             job.RowKey = this.ID;
             var list = job.Recipients
