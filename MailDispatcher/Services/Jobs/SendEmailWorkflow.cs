@@ -48,6 +48,8 @@ namespace MailDispatcher.Services.Jobs
 
         private string? mailPath;
 
+        private bool mailDeleted = false;
+
         public async override Task<JobResponse[]> RunAsync(Job job)
         {
             this.PreserveTime = TimeSpan.FromMinutes(15);
@@ -80,12 +82,14 @@ namespace MailDispatcher.Services.Jobs
             }
 
             await DeleteEmailAsync(job.BlobPath);
-
+            mailDeleted = true;
             return r.ToArray();
         }
 
         protected override Task RunFinallyAsync()
         {
+            if (mailDeleted)
+                return Task.CompletedTask;
             return DeleteEmailAsync(mailPath);
         }
 
