@@ -136,6 +136,7 @@ namespace MailDispatcher.Services.Jobs
                 sb.AppendLine(error);
 
                 after = after.Add(TimeSpan.FromMinutes(30));
+                this.Priority--;
             }
             return new JobResponse
             {
