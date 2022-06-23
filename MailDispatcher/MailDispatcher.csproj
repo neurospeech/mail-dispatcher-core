@@ -21,6 +21,6 @@
 	<PackageReference Include="MailKit" Version="2.15.0" />
     <PackageReference Include="SmtpServer" Version="6.4.0" />
     <PackageReference Include="DnsClient" Version="1.6.1" />
-    <PackageReference Include="NeuroSpeech.Eternity.SqlStorage" Version="2.1.10" />
+    <PackageReference Include="NeuroSpeech.Eternity.SqlStorage" Version="2.1.14" />
   </ItemGroup>
 </Project>
