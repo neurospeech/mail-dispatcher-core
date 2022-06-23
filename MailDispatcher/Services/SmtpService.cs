@@ -120,6 +120,7 @@ namespace MailDispatcher.Services
                 {
                     last = ex;
                 }
+                await Task.Delay(1000);
             }
             throw (last ?? new InvalidOperationException());
         }
