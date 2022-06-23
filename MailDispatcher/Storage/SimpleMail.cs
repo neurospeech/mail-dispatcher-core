@@ -31,6 +31,8 @@ namespace MailDispatcher.Storage
         public string? UnsubscribeLink { get; set; }
         public string? RequestID { get; set; }
 
+        public int Priority { get; set; }
+
         public (Stream stream, EmailAddress[] recipients) ToMessage(IFormFileCollection? files)
         {
             if (From == null)

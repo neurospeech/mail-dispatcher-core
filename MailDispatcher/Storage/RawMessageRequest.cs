@@ -8,5 +8,7 @@
 
         public string Content { get; set; }
         public string RequestID { get; set; }
+
+        public int Priority { get; set; }
     }
 }

@@ -40,7 +40,7 @@ namespace MailDispatcher.Controllers
             if (a.AuthKey != authKey)
                 return Unauthorized();
             var (ms, recipients) = model.ToMessage( Request.HasFormContentType ? Request.Form.Files : null);
-            var r = await jobs.Queue(accountID, model.RequestID, model.From, recipients, ms);
+            var r = await jobs.Queue(accountID, model.RequestID, model.From, recipients, ms, model.Priority);
             return Ok(new
             {
                 id = r
@@ -77,7 +77,13 @@ namespace MailDispatcher.Controllers
                 return BadRequest("From is missing");
             if (model.Recipients == null)
                 return BadRequest("Recipient is missing");
-            var r = await jobs.Queue(accountID, model.RequestID, model.From, EmailAddress.ParseList(model.Recipients), file.OpenReadStream());
+            var r = await jobs.Queue(
+                accountID,
+                model.RequestID,
+                model.From,
+                EmailAddress.ParseList(model.Recipients),
+                file.OpenReadStream(),
+                model.Priority);
             return Ok(new { 
                 id = r
             });

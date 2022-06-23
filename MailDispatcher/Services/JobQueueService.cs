@@ -42,7 +42,8 @@ namespace MailDispatcher.Storage
             string requestId,
             string from,
             EmailAddress[] recipients,
-            Stream file)
+            Stream file, 
+            int priority = 0)
         {
 
             // verify...
@@ -61,7 +62,11 @@ namespace MailDispatcher.Storage
                 MessageBodyUrl = blob.Uri.ToString()
             };
 
-            var wid = await SendEmailWorkflow.CreateAsync(workflowService, job);
+            var wid = await SendEmailWorkflow.CreateAsync(workflowService,
+                new NeuroSpeech.Eternity.WorkflowOptions<Job> {
+                    Input = job,
+                    Priority = priority
+                });
             return wid;
         }
 
