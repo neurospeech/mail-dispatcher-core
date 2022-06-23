@@ -61,14 +61,14 @@ namespace MailDispatcher.Services
 
             using (client)
             {
-                var msg = await MimeKit.MimeMessage.LoadAsync(await httpClient.GetStreamAsync(message.MessageBodyUrl), token);
+                var msg = await DownloadMesssageAsync(message, token);
                 try
                 {
                     var now = DateTimeOffset.UtcNow;
                     msg.Date = now;
                     msg.MessageId = $"{message.RowKey}@{localHost}";
                     msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{account.ID}-{message.RowKey}@{localHost}");
-                    if(!msg.ReplyTo.Any())
+                    if (!msg.ReplyTo.Any())
                     {
                         msg.ReplyTo.Add(msg.From.First());
                     }
@@ -81,13 +81,15 @@ namespace MailDispatcher.Services
                         HeaderId.MimeVersion,
                         HeaderId.ContentType
                     });
-                    await client.SendAsync(msg, 
-                        MailboxAddress.Parse(message.From), 
+                    await client.SendAsync(msg,
+                        MailboxAddress.Parse(message.From),
                         addresses.Select(x => MailboxAddress.Parse(x.ToString())), token);
                     return (true, null, null);
-                } catch (SmtpCommandException ex) {
+                }
+                catch (SmtpCommandException ex)
+                {
                     telemetryClient.TrackException(ex);
-                    switch(ex.ErrorCode)
+                    switch (ex.ErrorCode)
                     {
                         case SmtpErrorCode.MessageNotAccepted:
                         case SmtpErrorCode.SenderNotAccepted:
@@ -95,13 +97,31 @@ namespace MailDispatcher.Services
                             return (true, ex.ErrorCode.ToString(), ex.ToString());
                     }
                     return (true, ex.StatusCode.ToString(), ex.ToString());
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     telemetryClient.TrackException(ex);
                     return (true, "Unknown", ex.ToString());
                 }
 
             }
+        }
+
+        private async Task<MimeMessage> DownloadMesssageAsync(Job message, CancellationToken token)
+        {
+            Exception last = null;
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    return await MimeKit.MimeMessage.LoadAsync(await httpClient.GetStreamAsync(message.MessageBodyUrl), token);
+                }
+                catch (Exception ex)
+                {
+                    last = ex;
+                }
+            }
+            throw (last ?? new InvalidOperationException());
         }
 
         internal async Task<Notification> NotifyAsync(string url, string postBody)

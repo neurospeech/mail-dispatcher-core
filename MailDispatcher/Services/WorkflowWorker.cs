@@ -43,11 +43,12 @@ namespace MailDispatcher.Services
                 telemetryClient.TrackPageView("Processing");
                 try
                 {
-                    await workflowService.ProcessChunkedMessagesAsync(cancellationToken: stoppingToken);
+                    await workflowService.ProcessMessagesAsync(cancellationToken: stoppingToken);
                 }
                 catch (Exception ex)
                 {
                     telemetryClient.TrackException(ex);
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 }
             }
         }

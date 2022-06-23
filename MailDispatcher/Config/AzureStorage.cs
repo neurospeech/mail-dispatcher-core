@@ -10,6 +10,18 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Storage
 {
     [DIRegister(ServiceLifetime.Singleton)]
+    public class MailApp
+    {
+        public readonly string DefaultConnection;
+
+        public MailApp(IConfiguration configuration)
+        {
+            this.DefaultConnection = configuration.GetConnectionString("DefaultConnection");
+        }
+
+    }
+
+    [DIRegister(ServiceLifetime.Singleton)]
     public class AzureStorage
     {
         public readonly CloudTableClient CloudTableClient;

@@ -11,10 +11,16 @@ using System.Threading.Tasks;
 namespace MailDispatcher.Services
 {
     [DIRegister(ServiceLifetime.Singleton)]
-    public class MailDispatcherEternityStorage : NeuroSpeech.Eternity.EternityAzureStorage
+    public class WorkflowClock: EternityClock
     {
-        public MailDispatcherEternityStorage(AzureStorage azureStorage)
-            : base(("md", azureStorage.ConnectionString, true))
+
+    }
+
+    [DIRegister(ServiceLifetime.Singleton)]
+    public class MailDispatcherEternityStorage : NeuroSpeech.Eternity.SqlStorage.EternitySqlStorage
+    {
+        public MailDispatcherEternityStorage(MailApp app, WorkflowClock clock)
+            : base(app.DefaultConnection, clock, "MailEternityEntities", "Workflows")
         {
         }
     }
@@ -26,8 +32,9 @@ namespace MailDispatcher.Services
 
         public WorkflowService(
             MailDispatcherEternityStorage storage,
+            WorkflowClock clock,
             IServiceProvider services):
-            base(storage, services, new EternityClock())
+            base(services, clock, storage)
         {
             this.Storage = storage;
         }
