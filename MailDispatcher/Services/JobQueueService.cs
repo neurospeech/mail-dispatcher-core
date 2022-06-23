@@ -29,8 +29,7 @@ namespace MailDispatcher.Storage
             AzureStorage storage)
         {
             this.workflowService = workflowService;
-            this.blobs = storage.BlobServiceClient.GetBlobContainerClient("mails3");
-            this.blobs.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+            this.blobs = storage.MailBlobs;
         }
 
         public Task DeleteAsync(string id)

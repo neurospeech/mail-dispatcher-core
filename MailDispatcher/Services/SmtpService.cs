@@ -29,6 +29,7 @@ namespace MailDispatcher.Services
         private readonly DnsLookupService lookupService;
         private readonly TelemetryClient telemetryClient;
         private readonly AccountService accountService;
+        private readonly AzureStorage storage;
         private readonly IMemoryCache cache;
         private readonly string localHost;
 
@@ -37,12 +38,14 @@ namespace MailDispatcher.Services
             TelemetryClient telemetryClient,
             SmtpConfig smtpConfig,
             AccountService accountService,
+            AzureStorage storage,
             IMemoryCache cache)
         {
             this.httpClient = new HttpClient();
             this.lookupService = lookupService;
             this.telemetryClient = telemetryClient;
             this.accountService = accountService;
+            this.storage = storage;
             this.cache = cache;
             this.localHost = smtpConfig.Host;
         }
@@ -110,11 +113,15 @@ namespace MailDispatcher.Services
         private async Task<MimeMessage> DownloadMesssageAsync(Job message, CancellationToken token)
         {
             Exception last = null;
+            var blobClient = storage.MailBlobs.GetBlobClient(message.BlobPath);
             for (int i = 0; i < 3; i++)
             {
                 try
                 {
-                    return await MimeKit.MimeMessage.LoadAsync(await httpClient.GetStreamAsync(message.MessageBodyUrl), token);
+                    var streaming = await blobClient.DownloadStreamingAsync();
+                    using var value = streaming.Value;
+                    using var stream = value.Content;
+                    return await MimeKit.MimeMessage.LoadAsync(stream, token);
                 }
                 catch (Exception ex)
                 {

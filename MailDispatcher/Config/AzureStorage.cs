@@ -27,6 +27,7 @@ namespace MailDispatcher.Storage
         public readonly CloudTableClient CloudTableClient;
         public readonly BlobServiceClient BlobServiceClient;
         public readonly string ConnectionString;
+        public readonly BlobContainerClient MailBlobs;
 
         public AzureStorage(IConfiguration configuration)
         {
@@ -35,6 +36,9 @@ namespace MailDispatcher.Storage
             this.CloudTableClient = account.CreateCloudTableClient();
             this.BlobServiceClient = new BlobServiceClient(cnstr);
             this.ConnectionString = cnstr;
+
+            this.MailBlobs = BlobServiceClient.GetBlobContainerClient("mails3");
+            MailBlobs.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
         }
 
     }
