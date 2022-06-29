@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace MailDispatcher.Services
 {
+
     [DIRegister(ServiceLifetime.Singleton)]
     public class WorkflowClock: EternityClock
     {
@@ -33,8 +34,9 @@ namespace MailDispatcher.Services
         public WorkflowService(
             MailDispatcherEternityStorage storage,
             WorkflowClock clock,
-            IServiceProvider services):
-            base(services, clock, storage)
+            IServiceProvider services,
+            WorkflowLogger logger):
+            base(services, clock, storage, logger)
         {
             this.Storage = storage;
         }
