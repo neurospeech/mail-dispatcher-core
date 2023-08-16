@@ -7,6 +7,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualBasic;
 using MimeKit;
 using MimeKit.Cryptography;
 using System;
@@ -65,6 +66,8 @@ namespace MailDispatcher.Services
             using (client)
             {
                 var msg = await DownloadMesssageAsync(message, token);
+                var sender = MailboxAddress.Parse(message.From);
+                var replyTo = msg.ReplyTo?.OfType<MailboxAddress>()?.FirstOrDefault()?.Address;
                 try
                 {
                     var now = DateTimeOffset.UtcNow;
@@ -85,7 +88,7 @@ namespace MailDispatcher.Services
                         HeaderId.ContentType
                     });
                     await client.SendAsync(msg,
-                        MailboxAddress.Parse(message.From),
+                        sender,
                         addresses.Select(x => MailboxAddress.Parse(x.ToString())), token);
                     return (true, null, null);
                 }
@@ -97,6 +100,38 @@ namespace MailDispatcher.Services
                         case SmtpErrorCode.MessageNotAccepted:
                         case SmtpErrorCode.SenderNotAccepted:
                         case SmtpErrorCode.RecipientNotAccepted:
+
+                            // send email..
+
+                            if (replyTo != null)
+                            {
+                                try
+                                {
+                                    // send SMTP Error back to sender...
+
+                                    var replyAddress = MailboxAddress.Parse(replyTo);
+
+                                    var failed = new MimeMessage();
+                                    failed.From.Add(sender);
+                                    failed.To.Add(replyAddress);
+                                    failed.Subject = "Mail Delivery Failed to " + ex.Mailbox.Address;
+                                    failed.Date = DateTime.UtcNow;
+                                    var bodyBuilder = new BodyBuilder();
+                                    bodyBuilder.TextBody = "Mail Delivery Failed to " + ex.Mailbox.Address + "\r\n"
+                                        + ex.ToString();
+
+                                    failed.Body = bodyBuilder.ToMessageBody();
+
+                                    var sc = await NewClient(replyAddress.Address.Split('@').Last());
+                                    await sc.smtpClient.SendAsync(failed, sender, new MailboxAddress[] { replyAddress });
+
+                                } catch (Exception ex2) {
+                                    telemetryClient.TrackException(ex2);
+                                }
+
+                            }
+
+
                             return (true, ex.ErrorCode.ToString(), ex.ToString());
                     }
                     return (true, ex.StatusCode.ToString(), ex.ToString());
