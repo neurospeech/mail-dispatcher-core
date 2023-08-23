@@ -113,9 +113,11 @@ namespace MailDispatcher.Services
 
                                     var failed = new MimeMessage();
                                     failed.From.Add(sender);
+                                    failed.Headers.Add(HeaderId.OriginalFrom, ex.Mailbox.Address);
                                     failed.To.Add(replyAddress);
                                     failed.Subject = "Mail Delivery Failed to " + ex.Mailbox.Address;
                                     failed.Date = DateTime.UtcNow;
+                                    failed.InReplyTo = msg.MessageId;
                                     var bodyBuilder = new BodyBuilder();
                                     bodyBuilder.TextBody = "Mail Delivery Failed to " + ex.Mailbox.Address + "\r\n"
                                         + ex.ToString();
