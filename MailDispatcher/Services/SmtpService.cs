@@ -95,14 +95,25 @@ namespace MailDispatcher.Services
                 catch (SmtpCommandException ex)
                 {
                     telemetryClient.TrackException(ex);
+
+                    switch (ex.StatusCode)
+                    {
+                        case SmtpStatusCode.ServiceNotAvailable:
+                        case SmtpStatusCode.MailboxBusy:
+                        case SmtpStatusCode.TransactionFailed:
+                        case SmtpStatusCode.ErrorInProcessing:
+                        case SmtpStatusCode.ExceededStorageAllocation:
+                        case SmtpStatusCode.InsufficientStorage:
+                        case SmtpStatusCode.TemporaryAuthenticationFailure:
+                            return (false, ex.ErrorCode.ToString(), ex.ToString());
+                    }
+
                     switch (ex.ErrorCode)
                     {
                         case SmtpErrorCode.MessageNotAccepted:
                         case SmtpErrorCode.SenderNotAccepted:
                         case SmtpErrorCode.RecipientNotAccepted:
-
                             // send email..
-
                             if (replyTo != null)
                             {
                                 try
@@ -127,7 +138,9 @@ namespace MailDispatcher.Services
                                     var sc = await NewClient(replyAddress.Address.Split('@').Last());
                                     await sc.smtpClient.SendAsync(failed, sender, new MailboxAddress[] { replyAddress });
 
-                                } catch (Exception ex2) {
+                                }
+                                catch (Exception ex2)
+                                {
                                     telemetryClient.TrackException(ex2);
                                 }
 
@@ -136,6 +149,7 @@ namespace MailDispatcher.Services
 
                             return (true, ex.ErrorCode.ToString(), ex.ToString());
                     }
+
                     return (true, ex.StatusCode.ToString(), ex.ToString());
                 }
                 catch (Exception ex)
