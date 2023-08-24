@@ -258,6 +258,22 @@ namespace MailDispatcher.Services
                     continue;
                 try
                 {
+                    await client.ConnectAsync(mx, 25, MailKit.Security.SecureSocketOptions.None);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 25, SecureSocketOptions = SecureSocketOptions.None}, TimeSpan.FromMinutes(15));
+                    return (client, null);
+                }
+                catch (Exception ex)
+                {
+                    telemetryClient.TrackException(new Exception($"Unable to connect {domain} at {mx}:25\r\n{ex.Message}", ex));
+                }
+            }
+
+            foreach (var mx in mxes)
+            {
+                if (string.IsNullOrWhiteSpace(mx))
+                    continue;
+                try
+                {
                     await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.StartTls);
                     cache.Set(mxKey, new HostPort { Host = mx, Port = 587, SecureSocketOptions = SecureSocketOptions.StartTls }, TimeSpan.FromMinutes(15));
                     return (client, null);
