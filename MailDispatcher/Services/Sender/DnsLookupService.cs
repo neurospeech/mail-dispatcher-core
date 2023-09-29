@@ -55,13 +55,19 @@ namespace MailDispatcher.Services
             return sb.ToString();
         }
 
-        public async Task<string[]> LookupMXAsync(string domain)
+        public async Task<List<string>> LookupMXAsync(string domain)
         {
             // var lr = await cache.GetOrCreateAsync(domain, async x => {
             var r = await client.QueryAsync(domain, QueryType.MX);
-            return r.Answers.MxRecords()
+            List<string> ips = new List<string>();
+            foreach(var host in r.Answers.MxRecords()
                 .OrderBy(x => x.Preference)
-                .Select(x => x.Exchange.Value).ToArray();
+                .Select(x => x.Exchange.Value).ToArray())
+            {
+                var ars = await client.QueryAsync(host, QueryType.A);
+                ips.AddRange(ars.Answers.ARecords().Select(a => a.Address.ToString()));
+            }
+            return ips;
 
                 //return new LookupResult
                 //{
