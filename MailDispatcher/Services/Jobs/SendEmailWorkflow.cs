@@ -43,7 +43,7 @@ namespace MailDispatcher.Services.Jobs
 
     public class SendEmailWorkflow : Workflow<SendEmailWorkflow, Job, JobResponse[]>
     {
-        public static Regex throttleRegex = new Regex("(throttle|try|again|timed\\s+out|timeout|exceeded)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        public static Regex throttleRegex = new Regex("(throttle|try|again|timed\\s+out|timeout|exceeded|deferred)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
 
         private string? mailPath;

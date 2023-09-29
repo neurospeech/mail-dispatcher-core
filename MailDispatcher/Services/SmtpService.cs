@@ -272,8 +272,8 @@ namespace MailDispatcher.Services
                     continue;
                 try
                 {
-                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.StartTls);
-                    cache.Set(mxKey, new HostPort { Host = mx, Port = 587, SecureSocketOptions = SecureSocketOptions.StartTls }, TimeSpan.FromMinutes(15));
+                    await client.ConnectAsync(mx, 587, MailKit.Security.SecureSocketOptions.SslOnConnect);
+                    cache.Set(mxKey, new HostPort { Host = mx, Port = 587, SecureSocketOptions = SecureSocketOptions.SslOnConnect}, TimeSpan.FromMinutes(15));
                     return (client, null);
                 }
                 catch (Exception ex)
