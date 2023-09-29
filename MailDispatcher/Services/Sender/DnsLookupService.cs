@@ -24,7 +24,10 @@ namespace MailDispatcher.Services
 
         public DnsLookupService(AppCache<LookupResult> cache)
         {
-            this.client = new LookupClient();
+            this.client = new LookupClient(
+                new NameServer(System.Net.IPAddress.Parse("1.1.1.1")),
+                new NameServer(System.Net.IPAddress.Parse("8.8.8.8"))
+            );
             this.cache = cache;
         }
 
@@ -54,17 +57,21 @@ namespace MailDispatcher.Services
 
         public async Task<string[]> LookupMXAsync(string domain)
         {
-            var lr = await cache.GetOrCreateAsync(domain, async x => {
-                var r = await client.QueryAsync(domain, QueryType.MX);
-                return new LookupResult
-                {
-                    Domain = domain,
-                    MX = r.Answers.MxRecords()
-                    .OrderBy(x => x.Preference)
-                    .Select(x => x.Exchange.Value).ToArray()
-                };
-            });
-            return lr.MX;
+            // var lr = await cache.GetOrCreateAsync(domain, async x => {
+            var r = await client.QueryAsync(domain, QueryType.MX);
+            return r.Answers.MxRecords()
+                .OrderBy(x => x.Preference)
+                .Select(x => x.Exchange.Value).ToArray();
+
+                //return new LookupResult
+                //{
+                //    Domain = domain,
+                //    MX = r.Answers.MxRecords()
+                //    .OrderBy(x => x.Preference)
+                //    .Select(x => x.Exchange.Value).ToArray()
+                //};
+                // });
+                // return lr.MX;
         }
 
     }
