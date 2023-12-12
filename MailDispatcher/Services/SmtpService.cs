@@ -72,7 +72,9 @@ namespace MailDispatcher.Services
                 {
                     var now = DateTimeOffset.UtcNow;
                     msg.Date = now;
-                    msg.MessageId = $"{message.RowKey}@{localHost}";
+                    if (string.IsNullOrWhiteSpace(msg.MessageId)) {
+                        msg.MessageId = $"{message.RowKey}@{localHost}";
+                    }
                     msg.Headers.Add(HeaderId.ReturnPath, System.Text.Encoding.UTF8, $"{account.ID}-{message.RowKey}@{localHost}");
                     if (!msg.ReplyTo.Any())
                     {
