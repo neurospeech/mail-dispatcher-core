@@ -201,6 +201,13 @@ namespace MailDispatcher.Services.Jobs
             [Inject] TelemetryClient telemetryClient = null!)
         {
             var start = DateTimeOffset.UtcNow;
+
+            var diff = start - this.CurrentUtc;
+            if (diff.TotalDays > 2)
+            {
+                return (true, "Failed for more than 48 hours", "Failed for more than 48 hours, please retry again.");
+            }
+
             var r = await smtpService.SendAsync(input);
             if (r.Sent && r.Error == null)
             {
