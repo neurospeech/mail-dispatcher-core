@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using MailDispatcher.Config;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +30,7 @@ namespace MailDispatcher.Storage
         public readonly string ConnectionString;
         public readonly BlobContainerClient MailBlobs;
 
-        public AzureStorage(IConfiguration configuration)
+        public AzureStorage(IConfiguration configuration, SmtpConfig config)
         {
             var cnstr = configuration.GetSection("ConnectionStrings").GetValue<string>("AzureBlobs");
             var account = CloudStorageAccount.Parse(cnstr);
@@ -37,7 +38,7 @@ namespace MailDispatcher.Storage
             this.BlobServiceClient = new BlobServiceClient(cnstr);
             this.ConnectionString = cnstr;
 
-            this.MailBlobs = BlobServiceClient.GetBlobContainerClient("mails3");
+            this.MailBlobs = BlobServiceClient.GetBlobContainerClient(config.Storage);
             MailBlobs.CreateIfNotExists(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
         }
 

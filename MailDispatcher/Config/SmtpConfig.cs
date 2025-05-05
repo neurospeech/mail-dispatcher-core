@@ -12,9 +12,18 @@ namespace MailDispatcher.Config
     {
         public readonly string Host;
 
+        public readonly string WorkflowTable;
+
+        public readonly string Storage;
+
         public SmtpConfig(IConfiguration configuration)
         {
-            this.Host = configuration.GetSection("Smtp").GetValue<string>("Domain");
+
+            var config = configuration.GetSection("Smtp");
+
+            this.Host = config.GetValue<string>("Domain");
+            this.WorkflowTable = config.GetValue<string>("WorkflowTable");
+            this.Storage = config.GetValue<string>("Storage");
         }
 
     }

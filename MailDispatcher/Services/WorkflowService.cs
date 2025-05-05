@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using MailDispatcher.Config;
 using MailDispatcher.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using NeuroSpeech.Eternity;
@@ -20,8 +21,12 @@ namespace MailDispatcher.Services
     [DIRegister(ServiceLifetime.Singleton)]
     public class MailDispatcherEternityStorage : NeuroSpeech.Eternity.SqlStorage.EternitySqlStorage
     {
-        public MailDispatcherEternityStorage(MailApp app, WorkflowClock clock)
-            : base(app.DefaultConnection, clock, "MailEternityEntities", "Workflows")
+        public MailDispatcherEternityStorage(
+            MailApp app,
+            WorkflowClock clock,
+            SmtpConfig config
+            )
+            : base(app.DefaultConnection, clock, config.WorkflowTable, "Workflows")
         {
         }
     }
